@@ -19,11 +19,10 @@ def test_build_agent_prompt_includes_payload_and_safety_boundary():
         id="task-1",
         from_agent="agent-main",
         to="agent-code",
-        reply_to_agent="agent-coordinator",
         type="task.request",
         task_type="review_pr",
         payload={"repo": "demo", "pr": 12},
-        reply_to="agent.coordinator.results",
+        reply_to="agent-coordinator",
     )
 
     prompt = build_agent_prompt(task, agent_id="agent-code", extra_instruction="Be concise.")
@@ -36,24 +35,35 @@ def test_build_agent_prompt_includes_payload_and_safety_boundary():
     assert "Risk level" not in prompt
 
 
-def test_build_result_message_preserves_request_and_reply_target():
+def test_build_result_message_embeds_task_context_without_duplicate_routing_fields():
     task = TaskMessage(
         id="task-1",
         from_agent="agent-main",
         to="agent-code",
-        reply_to_agent="agent-coordinator",
         type="task.request",
         task_type="ping",
-        payload={},
-        reply_to="agent.coordinator.results",
+        payload={"fmt": "text", "content": "hello"},
+        reply_to="agent-coordinator",
+        created_at="2026-05-18T00:00:00+00:00",
     )
 
     result = build_result_message(task, agent_id="agent-code", status="completed", result="pong")
 
-    assert result["request_id"] == "task-1"
-    assert result["from"] == "agent-code"
-    assert result["to"] == "agent-coordinator"
     assert result["type"] == "task.result"
     assert result["status"] == "completed"
     assert result["result"] == "pong"
-    assert result["reply_to"] == "agent.coordinator.results"
+    assert result["task"] == {
+        "id": "task-1",
+        "from": "agent-main",
+        "to": "agent-code",
+        "type": "task.request",
+        "task_type": "ping",
+        "payload": {"fmt": "text", "content": "hello"},
+        "reply_to": "agent-coordinator",
+        "created_at": "2026-05-18T00:00:00+00:00",
+    }
+    assert "request_id" not in result
+    assert "from" not in result
+    assert "to" not in result
+    assert "worker" not in result
+    assert "reply_to" not in result

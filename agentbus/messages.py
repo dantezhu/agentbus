@@ -18,7 +18,6 @@ class TaskMessage:
     type: str
     task_type: str
     payload: dict[str, Any] = field(default_factory=dict)
-    reply_to_agent: str | None = None
     reply_to: str | None = None
     created_at: str | None = None
 
@@ -37,7 +36,6 @@ class TaskMessage:
             type=str(data["type"]),
             task_type=str(data["task_type"]),
             payload=payload,
-            reply_to_agent=data.get("reply_to_agent"),
             reply_to=data.get("reply_to"),
             created_at=data.get("created_at"),
         )
@@ -47,11 +45,10 @@ class TaskMessage:
             "id": self.id,
             "from": self.from_agent,
             "to": self.to,
-            "reply_to_agent": self.reply_to_agent,
+            "reply_to": self.reply_to,
             "type": self.type,
             "task_type": self.task_type,
             "payload": self.payload,
-            "reply_to": self.reply_to,
             "created_at": self.created_at,
         }
 
@@ -102,12 +99,9 @@ def build_result_message(
 ) -> dict[str, Any]:
     message: dict[str, Any] = {
         "id": str(uuid.uuid4()),
-        "request_id": task.id,
-        "from": agent_id,
-        "to": task.reply_to_agent or task.from_agent,
         "type": "task.result",
         "status": status,
-        "reply_to": task.reply_to,
+        "task": task.as_dict(),
         "completed_at": utc_now(),
     }
     if result is not None:

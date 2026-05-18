@@ -7,6 +7,7 @@ from typing import Awaitable, Callable, Protocol
 
 from .config import WorkerConfig
 from .messages import build_agent_prompt, build_result_message, dump_json, load_task
+from .publish import build_result_subject
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +96,7 @@ class AgentBusWorker:
                 await msg.ack()
             return
 
-        reply_to = task.reply_to or self.config.default_result_subject
+        reply_to = build_result_subject(task.reply_to or task.from_agent)
         prompt = build_agent_prompt(task, self.config.agent_id, self.config.extra_instruction)
         try:
             process = await self.runner(prompt, self.config)

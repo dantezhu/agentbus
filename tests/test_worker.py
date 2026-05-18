@@ -49,8 +49,7 @@ def test_handle_message_success_publishes_result_and_acks():
         "type": "task.request",
         "task_type": "ping",
         "payload": {"x": 1},
-        "reply_to_agent": "agent-main",
-        "reply_to": "agent.main.results",
+        "reply_to": "agent-main",
     }
     msg = DummyMsg(payload)
     publisher = DummyPublisher()
@@ -71,7 +70,14 @@ def test_handle_message_success_publishes_result_and_acks():
     result = publisher.published[0][1]
     assert result["status"] == "completed"
     assert result["result"] == "pong"
-    assert result["request_id"] == "task-1"
+    assert result["task"]["id"] == "task-1"
+    assert result["task"]["task_type"] == "ping"
+    assert result["task"]["payload"] == {"x": 1}
+    assert "request_id" not in result
+    assert "from" not in result
+    assert "to" not in result
+    assert "worker" not in result
+    assert "reply_to" not in result
 
 
 def test_handle_message_failed_agent_run_publishes_failed_result_and_acks():

@@ -363,19 +363,19 @@ Publish a test task in another terminal:
 ```bash
 agentbus task publish \
   --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
-  --to-agent code \
-  --to-agent doc \
-  --from-agent main \
-  --reply-to-agent main \
+  --to code \
+  --to doc \
+  --from main \
+  --reply-to main \
   --task-type ping \
   'hello'
 ```
 
 Publishing is intentionally configured with CLI arguments instead of a TOML file. Unlike the worker, it is a short one-shot command with only a few options.
 Only the task content is positional; agent routing and task metadata are named options so the command remains readable.
-Repeat `--to-agent` to publish the same task content to multiple agents. AgentBus sends one task message per target.
+Repeat `--to` to publish the same task content to multiple agents. AgentBus sends one task message per target.
 `--task-type` names the kind of work to run, while the final positional argument is the task content.
-`--reply-to-agent` controls which agent result inbox receives the result; when omitted, it defaults to `--from-agent`.
+`--reply-to` is an agent id, like `--from` and `--to`. It controls which agent result inbox receives the worker execution record; when omitted, it defaults to `--from`. AgentBus derives the result subject internally as `agent.<reply_to>.results`.
 `--payload-fmt` defaults to `text`, which stores the positional argument as `payload.fmt = "text"` and `payload.content` string. With `--payload-fmt json`, the positional argument is parsed as JSON and wrapped as `payload.fmt = "json"` plus `payload.content`, so JSON objects, arrays, strings, numbers, booleans, and null are all accepted. Workers should treat missing, empty, null, or `text` payload format as text.
 
 Examples:
@@ -383,20 +383,20 @@ Examples:
 ```bash
 agentbus task publish \
   --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
-  --to-agent code \
+  --to code \
   --task-type ping \
   --payload-fmt text \
   'hello'
 
 agentbus task publish \
   --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
-  --to-agent code \
+  --to code \
   --task-type batch \
   --payload-fmt json \
   '[{"url":"https://example.com"}]'
 ```
 
-The `--to-agent code` and `--to-agent doc` options map to these task subjects:
+The `--to code` and `--to doc` options map to these task subjects:
 
 ```text
 agent.code.tasks
@@ -435,7 +435,7 @@ agent.main.results
   "id": "task-20260518-0001",
   "from": "agent-main",
   "to": "agent-code",
-  "reply_to_agent": "agent-main",
+  "reply_to": "agent-main",
   "type": "task.request",
   "task_type": "review_pr",
   "payload": {
@@ -444,8 +444,7 @@ agent.main.results
       "repo": "org/repo",
       "pr": 123
     }
-  },
-  "reply_to": "agent.main.results"
+  }
 }
 ```
 
@@ -454,16 +453,30 @@ agent.main.results
 ```json
 {
   "id": "result-uuid",
-  "request_id": "task-20260518-0001",
-  "from": "agent-code",
-  "to": "agent-main",
   "type": "task.result",
   "status": "completed",
+  "task": {
+    "id": "task-20260518-0001",
+    "from": "agent-main",
+    "to": "agent-code",
+    "reply_to": "agent-main",
+    "type": "task.request",
+    "task_type": "review_pr",
+    "payload": {
+      "fmt": "json",
+      "content": {
+        "repo": "org/repo",
+        "pr": 123
+      }
+    },
+    "created_at": "2026-05-18T00:00:00+00:00"
+  },
   "result": "...agent output...",
-  "reply_to": "agent.main.results",
   "completed_at": "2026-05-18T00:00:00+00:00"
 }
 ```
+
+`result` messages are worker-generated execution records. Agent-to-agent business replies should still be sent as new `task` messages. The original task is embedded whole under `task`; top-level duplicate routing fields such as `request_id`, `from`, `to`, `worker`, and `reply_to` are intentionally omitted.
 
 Recommended status values:
 

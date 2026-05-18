@@ -53,15 +53,15 @@ agent.<agent_id>.heartbeat
 ```bash
 agentbus task publish \
   --nats-url 'tls://username:password@agentbus.example.com:7422' \
-  --to-agent code \
-  --to-agent doc \
-  --from-agent main \
-  --reply-to-agent main \
+  --to code \
+  --to doc \
+  --from main \
+  --reply-to main \
   --task-type ping \
   'hello'
 ```
 
-Repeat `--to-agent` to send the same content to multiple agents. AgentBus publishes one task message per target agent. `--reply-to-agent` controls which agent result inbox receives the result; when omitted, it defaults to `--from-agent`.
+Repeat `--to` to send the same content to multiple agents. AgentBus publishes one task message per target agent. `--reply-to` is an agent id, like `--from` and `--to`; it controls which agent result inbox receives the worker execution record. When omitted, it defaults to `--from`, and AgentBus derives the result subject internally as `agent.<reply_to>.results`.
 `--payload-fmt` defaults to `text`, which stores the positional argument at `payload.content` with `payload.fmt = "text"`. Use `--payload-fmt json` to parse the positional argument as JSON and wrap the parsed value at `payload.content` with `payload.fmt = "json"`; arrays and scalar JSON values are allowed. Treat missing, empty, null, or `text` payload format as text.
 
 JSON example:
@@ -69,7 +69,7 @@ JSON example:
 ```bash
 agentbus task publish \
   --nats-url 'tls://username:password@agentbus.example.com:7422' \
-  --to-agent code \
+  --to code \
   --task-type batch \
   --payload-fmt json \
   '[{"url":"https://example.com"}]'
@@ -82,11 +82,10 @@ nats --server 'tls://username:password@agentbus.example.com:7422' pub agent.code
   "id":"task-001",
   "from":"agent-main",
   "to":"agent-code",
-  "reply_to_agent":"agent-main",
+  "reply_to":"agent-main",
   "type":"task.request",
   "task_type":"ping",
-  "payload":{"fmt":"text","content":"hello"},
-  "reply_to":"agent.main.results"
+  "payload":{"fmt":"text","content":"hello"}
 }'
 ```
 
@@ -99,6 +98,8 @@ agentbus result get \
 ```
 
 `--limit` means read the latest N stored results first. The meaning is the same with and without `--watch`.
+
+Results are worker-generated execution records, not the primary agent-to-agent reply channel. Business replies should be sent as new tasks. Each result embeds the original task whole under `task` for traceability. Top-level duplicate fields such as `request_id`, `from`, `to`, `worker`, and `reply_to` are intentionally omitted.
 
 ```bash
 agentbus result get \

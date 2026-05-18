@@ -21,11 +21,11 @@ def add_worker_arguments(parser: argparse.ArgumentParser) -> None:
 def add_task_publish_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("content", help="Task content. Stored as payload.content")
     parser.add_argument("--nats-url", required=True, help="NATS connection URL, e.g. tls://user:pass@host:7422")
-    parser.add_argument("--to-agent", action="append", required=True, help="Target agent id. Repeat to publish to multiple agents")
+    parser.add_argument("--to", action="append", required=True, dest="to_agents", help="Target agent id. Repeat to publish to multiple agents")
     parser.add_argument("--task-type", required=True, help="Task type, e.g. ping or review_pr")
     parser.add_argument("--payload-fmt", choices=("text", "json"), default="text", help="Interpret content as plain text or JSON, then store as payload.fmt and payload.content")
-    parser.add_argument("--from-agent", default="main", help="Sender agent id")
-    parser.add_argument("--reply-to-agent", help="Agent that should receive task results. Defaults to --from-agent")
+    parser.add_argument("--from", dest="from_agent", default="main", help="Sender agent id")
+    parser.add_argument("--reply-to", help="Agent that should receive task results. Defaults to --from")
 
 
 def add_result_get_arguments(parser: argparse.ArgumentParser) -> None:
@@ -84,12 +84,12 @@ def configure_logging(
 async def run_task_publish(args: argparse.Namespace) -> None:
     messages = await publish_tasks(
         nats_url=args.nats_url,
-        target_agents=args.to_agent,
+        target_agents=args.to_agents,
         task_type=args.task_type,
         content=args.content,
         payload_fmt=args.payload_fmt,
         from_agent=args.from_agent,
-        reply_to_agent=args.reply_to_agent,
+        reply_to=args.reply_to,
     )
     output = messages[0] if len(messages) == 1 else messages
     print(json.dumps(output, ensure_ascii=False, separators=(",", ":")))
