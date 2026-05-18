@@ -68,8 +68,11 @@ def test_docs_use_direct_cli_args_for_publish_not_config_files():
 def test_deploy_templates_use_env_virtualenv_path():
     systemd = (ROOT / "deploy" / "systemd" / "agentbus-worker.service").read_text()
     launchd = (ROOT / "deploy" / "launchd" / "com.agentbus.worker.plist").read_text()
+    supervisor = (ROOT / "deploy" / "supervisor" / "agentbus-worker.conf").read_text()
 
-    assert "/path/to/agentbus/env/bin/agentbus" in systemd
-    assert "/path/to/agentbus/env/bin/agentbus" in launchd
-    assert ".venv" not in systemd
-    assert ".venv" not in launchd
+    for text in (systemd, launchd, supervisor):
+        assert "/path/to/agentbus/env/bin/agentbus" in text
+        assert ".venv" not in text
+
+    assert "command=/path/to/agentbus/env/bin/agentbus worker run --config" in supervisor
+    assert "autorestart=true" in supervisor

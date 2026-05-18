@@ -54,6 +54,7 @@ scripts/
 deploy/
   systemd/agentbus-worker.service
   launchd/com.agentbus.worker.plist
+  supervisor/agentbus-worker.conf
 skills/
   agentbus/SKILL.md
 ```
@@ -334,6 +335,7 @@ For long-running deployment, use one of the included templates:
 ```text
 deploy/systemd/agentbus-worker.service
 deploy/launchd/com.agentbus.worker.plist
+deploy/supervisor/agentbus-worker.conf
 ```
 
 Before installing a service, edit the template paths, user, working directory, and config path for the target machine.
