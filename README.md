@@ -29,7 +29,7 @@ Server side:
 
 - `nats-server` with JetStream enabled.
 - `nats` CLI for stream setup and debugging.
-- A reachable TCP port for NATS clients, usually `4222`.
+- A reachable TCP port for NATS clients. The examples use non-default `7422` instead of NATS default `4222`.
 
 Worker side:
 
@@ -63,7 +63,7 @@ skills/
 Copy the sample config to your server:
 
 ```bash
-sudo mkdir -p /etc/nats /data/jetstream
+sudo mkdir -p /etc/nats /data/jetstream /etc/nats/tls
 sudo cp config/nats-server.conf /etc/nats/agentbus.conf
 sudo chmod 600 /etc/nats/agentbus.conf
 sudo chown -R nats:nats /data/jetstream 2>/dev/null || true
@@ -81,6 +81,8 @@ At minimum, change these values:
 agent-main password
 agent-code password
 agent-doc password
+client port, if `7422` is not appropriate
+TLS cert/key paths, if public internet clients will connect
 jetstream.store_dir, if /data/jetstream is not appropriate
 ```
 
@@ -102,6 +104,43 @@ jetstream {
 }
 ```
 
+### Domain and TLS
+
+For public internet deployments, prefer a domain plus TLS. The domain is configured in DNS, not inside NATS. NATS only needs to know which certificate and key files to serve.
+
+Example DNS setup:
+
+```text
+agentbus.example.com.  A     <server_public_ipv4>
+agentbus.example.com.  AAAA  <server_public_ipv6, optional>
+```
+
+Example Let's Encrypt certificate flow on the server:
+
+```bash
+sudo certbot certonly --standalone -d agentbus.example.com
+sudo install -m 0644 /etc/letsencrypt/live/agentbus.example.com/fullchain.pem /etc/nats/tls/fullchain.pem
+sudo install -m 0600 /etc/letsencrypt/live/agentbus.example.com/privkey.pem /etc/nats/tls/privkey.pem
+sudo chown -R nats:nats /etc/nats/tls 2>/dev/null || true
+```
+
+Then enable this block in `/etc/nats/agentbus.conf`:
+
+```text
+tls {
+  cert_file: "/etc/nats/tls/fullchain.pem"
+  key_file: "/etc/nats/tls/privkey.pem"
+}
+```
+
+Clients should then use the domain and `tls://` scheme:
+
+```text
+tls://agent-main:agent_main_password@agentbus.example.com:7422
+```
+
+If you do not enable TLS, use `nats://...`, but avoid exposing that setup to the public internet.
+
 Start the server with the config:
 
 ```bash
@@ -112,7 +151,7 @@ For a real deployment, run this under your service manager, for example systemd,
 
 Important network notes:
 
-- Expose the NATS client port, usually `4222`, only to machines that need to connect.
+- Expose the NATS client port, `7422` in these examples, only to machines that need to connect. The NATS default is `4222`; using a non-default port reduces scanner noise but is not a security boundary.
 - Keep the monitoring port `8222` private or bind it only to localhost/VPN.
 - Use TLS for public internet deployments. If TLS is enabled, clients should use a `tls://...` NATS URL or equivalent TLS client options.
 
@@ -132,7 +171,7 @@ After the NATS server is running, create the task and result streams.
 Use a user with JetStream API permission. In the sample config, `agent-main` has `$JS.API.>` access:
 
 ```bash
-export NATS_URL='nats://agent-main:agent_main_password@server_host:4222'
+export NATS_URL='tls://agent-main:agent_main_password@agentbus.example.com:7422'
 ./scripts/stream-setup.sh
 ```
 
@@ -195,7 +234,7 @@ Required worker fields:
 ```toml
 [worker]
 agent_id = "code"
-nats_url = "nats://agent-code:agent_code_password@server_host:4222"
+nats_url = "tls://agent-code:agent_code_password@agentbus.example.com:7422"
 agent_chat_cmd = ["agent-cli", "chat", "--oneshot"]
 log_dir = "~/.agentbus/logs"
 log_max_bytes = 104857600
@@ -207,7 +246,7 @@ A fuller example:
 ```toml
 [worker]
 agent_id = "code"
-nats_url = "nats://agent-code:agent_code_password@server_host:4222"
+nats_url = "tls://agent-code:agent_code_password@agentbus.example.com:7422"
 stream = "AGENT_TASKS"
 durable = "agent-code"
 task_subject = "agent.code.tasks"
@@ -229,7 +268,7 @@ Environment variables are supported for container deployments:
 
 ```bash
 export AGENT_ID='code'
-export NATS_URL='nats://agent-code:agent_code_password@server_host:4222'
+export NATS_URL='tls://agent-code:agent_code_password@agentbus.example.com:7422'
 export AGENT_CHAT_CMD='agent-cli chat --oneshot'
 export AGENTBUS_LOG_DIR='~/.agentbus/logs'
 export AGENTBUS_LOG_MAX_BYTES=104857600
@@ -266,14 +305,14 @@ Before installing a service, edit the template paths, user, working directory, a
 Start a result subscriber in one terminal:
 
 ```bash
-export NATS_URL='nats://agent-main:agent_main_password@server_host:4222'
+export NATS_URL='tls://agent-main:agent_main_password@agentbus.example.com:7422'
 nats --server "$NATS_URL" sub agent.main.results
 ```
 
 Publish a test task in another terminal:
 
 ```bash
-export NATS_URL='nats://agent-main:agent_main_password@server_host:4222'
+export NATS_URL='tls://agent-main:agent_main_password@agentbus.example.com:7422'
 ./scripts/publish-task.sh code ping '{"text":"hello"}'
 ```
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${NATS_URL:?Set NATS_URL, e.g. nats://username:password@server_host:server_port}"
+: "${NATS_URL:?Set NATS_URL, e.g. tls://username:password@agentbus.example.com:7422}"
 
 TARGET_AGENT="${1:?Usage: publish-task.sh <target-agent> <task-name> [payload-json]}"
 TASK_NAME="${2:?Usage: publish-task.sh <target-agent> <task-name> [payload-json]}"

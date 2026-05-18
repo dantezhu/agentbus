@@ -8,7 +8,7 @@
 
 [worker]
 agent_id = "code"
-nats_url = "nats://username:password@server_host:server_port"
+nats_url = "tls://username:password@agentbus.example.com:7422"
 stream = "AGENT_TASKS"
 durable = "agent-code"
 task_subject = "agent.code.tasks"

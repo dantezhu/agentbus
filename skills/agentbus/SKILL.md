@@ -3,7 +3,7 @@ name: agentbus
 description: Use when distributed agent programs need to send tasks to each other through AgentBus/NATS, inspect task results, or troubleshoot the shared agent message bus.
 version: 0.1.0
 author: AgentBus
-license: MIT
+license: Apache-2.0
 platforms: [linux, macos]
 metadata:
   tags: [agents, nats, jetstream, messaging]
@@ -37,6 +37,8 @@ result message published back to NATS
 - access to a valid `NATS_URL`;
 - `agentbus-worker` installed on worker machines.
 
+For public deployments, prefer a domain and TLS URL such as `tls://username:password@agentbus.example.com:7422`. The example port is `7422` to avoid the default NATS client port `4222`.
+
 ## Subject convention
 
 ```text
@@ -49,7 +51,7 @@ agent.<agent_id>.heartbeat
 ## Send a task
 
 ```bash
-export NATS_URL='nats://username:password@server_host:server_port'
+export NATS_URL='tls://username:password@agentbus.example.com:7422'
 ./scripts/publish-task.sh code ping '{"text":"hello"}'
 ```
 
@@ -86,7 +88,7 @@ Default user config path:
 ```toml
 [worker]
 agent_id = "code"
-nats_url = "nats://username:password@server_host:server_port"
+nats_url = "tls://username:password@agentbus.example.com:7422"
 agent_chat_cmd = ["agent-cli", "chat", "--oneshot"]
 stream = "AGENT_TASKS"
 durable = "agent-code"
