@@ -305,13 +305,10 @@ backup_count = 5
 
 ```
 
-`chat_cmd` can also be a string, but list form is safer because `{input}` becomes one exact argument even when the generated prompt contains spaces or quotes.
+`chat_cmd` must be a TOML array of strings. AgentBus rejects string-form commands so the generated multi-line prompt is always inserted as one explicit argv argument, never shell-parsed.
 
 ```toml
-# String form is accepted for simple commands.
-chat_cmd = "agent-cli chat --oneshot {input}"
-
-# Prefer list form when the prompt belongs between flags.
+# Prompt between flags.
 chat_cmd = ["agent-cli", "run", "--prompt", "{input}", "--json"]
 
 # Hermes example.

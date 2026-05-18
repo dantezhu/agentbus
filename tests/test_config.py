@@ -67,7 +67,7 @@ def test_build_config_reads_config_file_without_env_or_cli_overrides(tmp_path, m
         """
 [agent]
 id = "file-agent"
-chat_cmd = "agent-cli chat --oneshot {input}"
+chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 
 [worker]
 task_timeout_seconds = 300
@@ -109,7 +109,7 @@ url = "nats://example:4222"
         """
 [agent]
 id = "code"
-chat_cmd = "agent-cli {input}"
+chat_cmd = ["agent-cli", "{input}"]
 old_cmd = "some-cmd"
 
 [nats]
@@ -120,13 +120,30 @@ url = "nats://example:4222"
         load_config_file(old_name)
 
 
+def test_agent_chat_cmd_must_be_list_of_strings(tmp_path):
+    config_path = tmp_path / "string-chat-cmd.toml"
+    config_path.write_text(
+        """
+[agent]
+id = "code"
+chat_cmd = "agent-cli chat --oneshot {input}"
+
+[nats]
+url = "nats://example:4222"
+""".strip()
+    )
+
+    with pytest.raises(ValueError, match="list of strings"):
+        load_config_file(config_path)
+
+
 def test_agent_chat_cmd_must_include_input_placeholder(tmp_path):
     config_path = tmp_path / "missing-placeholder.toml"
     config_path.write_text(
         """
 [agent]
 id = "code"
-chat_cmd = "agent-cli chat --oneshot"
+chat_cmd = ["agent-cli", "chat", "--oneshot"]
 
 [nats]
 url = "nats://example:4222"

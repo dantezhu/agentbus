@@ -142,7 +142,7 @@ max_bytes = 104857600
 backup_count = 5
 ```
 
-`chat_cmd` is required and must include the literal `{input}` placeholder where AgentBus should insert the generated prompt. Prefer list form when the prompt belongs between flags, for example `chat_cmd = ["agent-cli", "run", "--prompt", "{input}", "--json"]`. For Hermes workers, use `chat_cmd = ["hermes", "chat", "-q", "-Q", "{input}"]`. `durable` is the stable NATS JetStream consumer name used to remember worker delivery progress across restarts.
+`chat_cmd` is required, must be a TOML array of strings, and must include the literal `{input}` placeholder where AgentBus should insert the generated prompt. String-form commands are rejected so the prompt is always passed as one explicit argv argument, never shell-parsed. For prompts between flags, use `chat_cmd = ["agent-cli", "run", "--prompt", "{input}", "--json"]`. For Hermes workers, use `chat_cmd = ["hermes", "chat", "-q", "-Q", "{input}"]`. `durable` is the stable NATS JetStream consumer name used to remember worker delivery progress across restarts.
 
 ## Safety rule
 

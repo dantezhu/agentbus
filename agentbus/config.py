@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import os
-import shlex
 import tomllib
 from typing import Any
 
@@ -68,15 +67,11 @@ SECTION_FIELD_MAP = {
 
 
 def normalize_agent_chat_cmd(value: Any) -> list[str]:
-    if isinstance(value, str):
-        command = shlex.split(value)
-    elif isinstance(value, list) and all(isinstance(item, str) for item in value):
-        command = value
-    else:
-        raise ValueError("agent_chat_cmd must be a string or list of strings")
-    if not any("{input}" in item for item in command):
+    if not (isinstance(value, list) and all(isinstance(item, str) for item in value)):
+        raise ValueError("agent_chat_cmd must be a list of strings")
+    if not any("{input}" in item for item in value):
         raise ValueError("agent_chat_cmd must include the literal {input} placeholder")
-    return command
+    return value
 
 
 def load_config_file(path: str | os.PathLike[str]) -> WorkerConfig:

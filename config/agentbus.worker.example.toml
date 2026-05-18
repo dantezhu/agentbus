@@ -8,8 +8,8 @@
 
 [agent]
 id = "code"
-# Required. Either string or list is accepted, but list form is safest because
-# the generated prompt replaces one argument exactly.
+# Required. Must be a TOML array of strings. String-form commands are rejected
+# so the generated multi-line prompt replaces one argv argument exactly.
 chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 # Use {input} where the generated prompt belongs.
 # chat_cmd = ["agent-cli", "run", "--prompt", "{input}", "--json"]
