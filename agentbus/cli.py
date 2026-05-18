@@ -10,6 +10,7 @@ from pathlib import Path
 
 from .config import build_config
 from .publish import publish_tasks
+from .result import read_results
 from .worker import AgentBusWorker
 
 
@@ -22,8 +23,16 @@ def add_task_publish_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--nats-url", required=True, help="NATS connection URL, e.g. tls://user:pass@host:7422")
     parser.add_argument("--to-agent", action="append", required=True, help="Target agent id. Repeat to publish to multiple agents")
     parser.add_argument("--task-type", required=True, help="Task type, e.g. ping or review_pr")
+    parser.add_argument("--payload-fmt", choices=("text", "json"), default="text", help="Interpret content as plain text or JSON, then store as payload.fmt and payload.content")
     parser.add_argument("--from-agent", default="main", help="Sender agent id")
     parser.add_argument("--reply-to-agent", help="Agent that should receive task results. Defaults to --from-agent")
+
+
+def add_result_get_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--nats-url", required=True, help="NATS connection URL, e.g. tls://user:pass@host:7422")
+    parser.add_argument("--agent", required=True, help="Agent id whose result inbox should be read")
+    parser.add_argument("--limit", type=int, default=1, help="Read the latest N stored results before exiting or watching")
+    parser.add_argument("--watch", action="store_true", help="After reading the latest N stored results, keep watching new results")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -39,6 +48,11 @@ def build_parser() -> argparse.ArgumentParser:
     task_subparsers = task_parser.add_subparsers(dest="task_command", required=True)
     task_publish_parser = task_subparsers.add_parser("publish", help="Publish an AgentBus task", allow_abbrev=False)
     add_task_publish_arguments(task_publish_parser)
+
+    result_parser = subparsers.add_parser("result", help="Result commands", allow_abbrev=False)
+    result_subparsers = result_parser.add_subparsers(dest="result_command", required=True)
+    result_get_parser = result_subparsers.add_parser("get", help="Read or watch AgentBus results", allow_abbrev=False)
+    add_result_get_arguments(result_get_parser)
     return parser
 
 
@@ -73,6 +87,7 @@ async def run_task_publish(args: argparse.Namespace) -> None:
         target_agents=args.to_agent,
         task_type=args.task_type,
         content=args.content,
+        payload_fmt=args.payload_fmt,
         from_agent=args.from_agent,
         reply_to_agent=args.reply_to_agent,
     )
@@ -91,6 +106,16 @@ def run_worker(args: argparse.Namespace) -> None:
     asyncio.run(worker.run_forever())
 
 
+async def run_result_get(args: argparse.Namespace) -> None:
+    await read_results(
+        nats_url=args.nats_url,
+        agent=args.agent,
+        limit=args.limit,
+        watch=args.watch,
+        emit=lambda item: print(json.dumps(item, ensure_ascii=False, separators=(",", ":"))),
+    )
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -100,6 +125,9 @@ def main(argv: list[str] | None = None) -> None:
             return
         if args.command == "task" and args.task_command == "publish":
             asyncio.run(run_task_publish(args))
+            return
+        if args.command == "result" and args.result_command == "get":
+            asyncio.run(run_result_get(args))
             return
     except Exception as exc:
         parser.exit(1, f"agentbus: error: {exc}\n")

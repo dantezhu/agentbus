@@ -44,6 +44,8 @@ def test_parser_accepts_task_publish_subcommand_with_named_agent_args_and_positi
         "main",
         "--reply-to-agent",
         "coordinator",
+        "--payload-fmt",
+        "json",
     ])
 
     assert args.command == "task"
@@ -54,6 +56,8 @@ def test_parser_accepts_task_publish_subcommand_with_named_agent_args_and_positi
     assert args.nats_url == "tls://agent-main:secret@agentbus.example.com:7422"
     assert args.from_agent == "main"
     assert args.reply_to_agent == "coordinator"
+    assert args.payload_fmt == "json"
+    assert not hasattr(args, "task_fmt")
     assert not hasattr(args, "config")
 
 
@@ -112,6 +116,64 @@ def test_parser_rejects_task_publish_config_file():
 
     with pytest.raises(SystemExit):
         parser.parse_args(["task", "publish", "--config", "~/.agentbus/main.toml", "--to-agent", "code", "--task-type", "ping", "hello"])
+
+
+def test_parser_rejects_removed_task_fmt_option():
+    parser = build_parser()
+
+    with pytest.raises(SystemExit):
+        parser.parse_args([
+            "task",
+            "publish",
+            "--nats-url",
+            "tls://agent-main:secret@agentbus.example.com:7422",
+            "--to-agent",
+            "code",
+            "--task-type",
+            "ping",
+            "--task-fmt",
+            "json",
+            "hello",
+        ])
+
+
+def test_parser_accepts_result_get_with_same_limit_for_watch_and_non_watch():
+    parser = build_parser()
+
+    args = parser.parse_args([
+        "result",
+        "get",
+        "--nats-url",
+        "tls://agent-main:secret@agentbus.example.com:7422",
+        "--agent",
+        "main",
+        "--limit",
+        "20",
+        "--watch",
+    ])
+
+    assert args.command == "result"
+    assert args.result_command == "get"
+    assert args.nats_url == "tls://agent-main:secret@agentbus.example.com:7422"
+    assert args.agent == "main"
+    assert args.limit == 20
+    assert args.watch is True
+    assert not hasattr(args, "ack")
+
+
+def test_parser_rejects_result_get_ack_option():
+    parser = build_parser()
+
+    with pytest.raises(SystemExit):
+        parser.parse_args([
+            "result",
+            "get",
+            "--nats-url",
+            "tls://agent-main:secret@agentbus.example.com:7422",
+            "--agent",
+            "main",
+            "--ack",
+        ])
 
 
 def test_configure_logging_creates_default_log_file_in_log_dir(tmp_path):

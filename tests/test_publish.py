@@ -23,9 +23,70 @@ def test_build_task_message_uses_agent_level_arguments_only():
         "reply_to_agent": "agent-coordinator",
         "type": "task.request",
         "task_type": "ping",
-        "payload": {"content": "hello"},
+        "payload": {"fmt": "text", "content": "hello"},
         "reply_to": "agent.coordinator.results",
     }
+
+
+def test_build_task_message_json_payload_fmt_wraps_any_json_value_as_payload_content():
+    list_message = build_task_message(
+        from_agent="main",
+        target_agent="code",
+        task_type="ping",
+        content='[1, {"ok": true}]',
+        payload_fmt="json",
+    )
+    string_message = build_task_message(
+        from_agent="main",
+        target_agent="code",
+        task_type="ping",
+        content='"hello"',
+        payload_fmt="json",
+    )
+
+    assert list_message["payload"] == {"fmt": "json", "content": [1, {"ok": True}]}
+    assert string_message["payload"] == {"fmt": "json", "content": "hello"}
+
+
+def test_build_task_message_text_payload_fmt_accepts_empty_or_text_fmt():
+    default_message = build_task_message(
+        from_agent="main",
+        target_agent="code",
+        task_type="ping",
+        content="hello",
+    )
+    empty_fmt_message = build_task_message(
+        from_agent="main",
+        target_agent="code",
+        task_type="ping",
+        content="hello",
+        payload_fmt="",
+    )
+
+    assert default_message["payload"] == {"fmt": "text", "content": "hello"}
+    assert empty_fmt_message["payload"] == {"fmt": "text", "content": "hello"}
+
+
+def test_build_task_message_rejects_invalid_json_payload_fmt_content():
+    with pytest.raises(ValueError, match="content must be valid JSON"):
+        build_task_message(
+            from_agent="main",
+            target_agent="code",
+            task_type="ping",
+            content="{not-json}",
+            payload_fmt="json",
+        )
+
+
+def test_build_task_message_rejects_unknown_payload_fmt():
+    with pytest.raises(ValueError, match="payload_fmt must be text or json"):
+        build_task_message(
+            from_agent="main",
+            target_agent="code",
+            task_type="ping",
+            content="hello",
+            payload_fmt="xml",
+        )
 
 
 def test_build_task_message_defaults_reply_to_agent_to_sender():

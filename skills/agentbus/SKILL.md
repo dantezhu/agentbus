@@ -62,6 +62,18 @@ agentbus task publish \
 ```
 
 Repeat `--to-agent` to send the same content to multiple agents. AgentBus publishes one task message per target agent. `--reply-to-agent` controls which agent result inbox receives the result; when omitted, it defaults to `--from-agent`.
+`--payload-fmt` defaults to `text`, which stores the positional argument at `payload.content` with `payload.fmt = "text"`. Use `--payload-fmt json` to parse the positional argument as JSON and wrap the parsed value at `payload.content` with `payload.fmt = "json"`; arrays and scalar JSON values are allowed. Treat missing, empty, null, or `text` payload format as text.
+
+JSON example:
+
+```bash
+agentbus task publish \
+  --nats-url 'tls://username:password@agentbus.example.com:7422' \
+  --to-agent code \
+  --task-type batch \
+  --payload-fmt json \
+  '[{"url":"https://example.com"}]'
+```
 
 Equivalent direct publish:
 
@@ -73,15 +85,27 @@ nats --server 'tls://username:password@agentbus.example.com:7422' pub agent.code
   "reply_to_agent":"agent-main",
   "type":"task.request",
   "task_type":"ping",
-  "payload":{"content":"hello"},
+  "payload":{"fmt":"text","content":"hello"},
   "reply_to":"agent.main.results"
 }'
 ```
 
-## Watch results
+## Read or watch results
 
 ```bash
-nats --server 'tls://username:password@agentbus.example.com:7422' sub agent.main.results
+agentbus result get \
+  --nats-url 'tls://username:password@agentbus.example.com:7422' \
+  --agent main
+```
+
+`--limit` means read the latest N stored results first. The meaning is the same with and without `--watch`.
+
+```bash
+agentbus result get \
+  --nats-url 'tls://username:password@agentbus.example.com:7422' \
+  --agent main \
+  --limit 20 \
+  --watch
 ```
 
 ## Worker config

@@ -340,10 +340,22 @@ Before installing a service, edit the template paths, user, working directory, a
 
 ## 6. Publish a test task
 
-Start a result subscriber in one terminal:
+Read the latest result in one terminal:
 
 ```bash
-nats --server 'tls://agent-main:agent_main_password@agentbus.example.com:7422' sub agent.main.results
+agentbus result get \
+  --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
+  --agent main
+```
+
+To keep watching after reading recent history, add `--watch`. `--limit` has the same meaning whether or not `--watch` is set: read the latest N stored results first.
+
+```bash
+agentbus result get \
+  --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
+  --agent main \
+  --limit 20 \
+  --watch
 ```
 
 Publish a test task in another terminal:
@@ -364,6 +376,25 @@ Only the task content is positional; agent routing and task metadata are named o
 Repeat `--to-agent` to publish the same task content to multiple agents. AgentBus sends one task message per target.
 `--task-type` names the kind of work to run, while the final positional argument is the task content.
 `--reply-to-agent` controls which agent result inbox receives the result; when omitted, it defaults to `--from-agent`.
+`--payload-fmt` defaults to `text`, which stores the positional argument as `payload.fmt = "text"` and `payload.content` string. With `--payload-fmt json`, the positional argument is parsed as JSON and wrapped as `payload.fmt = "json"` plus `payload.content`, so JSON objects, arrays, strings, numbers, booleans, and null are all accepted. Workers should treat missing, empty, null, or `text` payload format as text.
+
+Examples:
+
+```bash
+agentbus task publish \
+  --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
+  --to-agent code \
+  --task-type ping \
+  --payload-fmt text \
+  'hello'
+
+agentbus task publish \
+  --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
+  --to-agent code \
+  --task-type batch \
+  --payload-fmt json \
+  '[{"url":"https://example.com"}]'
+```
 
 The `--to-agent code` and `--to-agent doc` options map to these task subjects:
 
@@ -372,7 +403,7 @@ agent.code.tasks
 agent.doc.tasks
 ```
 
-If the target workers are running, the subscriber should receive `task.result` messages on:
+If the target workers are running, `agentbus result get --agent main` should receive `task.result` messages from:
 
 ```text
 agent.main.results
@@ -408,8 +439,11 @@ agent.main.results
   "type": "task.request",
   "task_type": "review_pr",
   "payload": {
-    "repo": "org/repo",
-    "pr": 123
+    "fmt": "json",
+    "content": {
+      "repo": "org/repo",
+      "pr": 123
+    }
   },
   "reply_to": "agent.main.results"
 }

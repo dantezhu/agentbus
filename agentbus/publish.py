@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import uuid
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -24,12 +25,25 @@ def build_result_subject(reply_to_agent: str) -> str:
     return f"agent.{normalize_agent_id(reply_to_agent)}.results"
 
 
+def build_payload(content: str, payload_fmt: str | None = "text") -> dict[str, Any]:
+    fmt = payload_fmt or "text"
+    if fmt == "text":
+        return {"fmt": "text", "content": content}
+    if fmt == "json":
+        try:
+            return {"fmt": "json", "content": json.loads(content)}
+        except json.JSONDecodeError as exc:
+            raise ValueError("content must be valid JSON when --payload-fmt json is used") from exc
+    raise ValueError("payload_fmt must be text or json")
+
+
 def build_task_message(
     *,
     from_agent: str,
     target_agent: str,
     task_type: str,
     content: str,
+    payload_fmt: str | None = "text",
     reply_to_agent: str | None = None,
 ) -> dict[str, Any]:
     if not content:
@@ -47,7 +61,7 @@ def build_task_message(
         "reply_to_agent": f"agent-{reply_agent}",
         "type": "task.request",
         "task_type": task_type,
-        "payload": {"content": content},
+        "payload": build_payload(content, payload_fmt),
         "reply_to": build_result_subject(reply_agent),
     }
 
@@ -69,6 +83,7 @@ async def publish_task(
     target_agent: str,
     task_type: str,
     content: str,
+    payload_fmt: str | None = "text",
     from_agent: str,
     reply_to_agent: str | None = None,
     publisher: PublisherFn = nats_publisher,
@@ -81,6 +96,7 @@ async def publish_task(
         target_agent=target,
         task_type=task_type,
         content=content,
+        payload_fmt=payload_fmt,
         reply_to_agent=reply_to_agent,
     )
     await publisher(nats_url, build_task_subject(target), dump_json(message))
@@ -93,6 +109,7 @@ async def publish_tasks(
     target_agents: list[str],
     task_type: str,
     content: str,
+    payload_fmt: str | None = "text",
     from_agent: str,
     reply_to_agent: str | None = None,
     publisher: PublisherFn = nats_publisher,
@@ -108,6 +125,7 @@ async def publish_tasks(
             target_agent=target,
             task_type=task_type,
             content=content,
+            payload_fmt=payload_fmt,
             from_agent=from_agent,
             reply_to_agent=reply_to_agent,
             publisher=publisher,
