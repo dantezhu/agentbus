@@ -2,7 +2,7 @@ import asyncio
 import json
 
 from agentbus.config import WorkerConfig
-from agentbus.worker import AgentBusWorker, ProcessResult, run_agent_chat
+from agentbus.worker import AgentBusWorker, ProcessResult, build_agent_command, run_agent_chat
 
 
 class DummyMsg:
@@ -135,3 +135,23 @@ def test_run_agent_chat_uses_configured_command(monkeypatch):
     assert calls["args"] == ("agent-cli", "chat", "--oneshot", "hello")
     assert result.returncode == 0
     assert result.stdout == "ok"
+
+
+def test_build_agent_command_replaces_input_placeholder_without_forcing_last_arg():
+    config = WorkerConfig(
+        agent_id="code",
+        nats_url="nats://example:4222",
+        agent_chat_cmd=["agent-cli", "run", "--prompt", "{input}", "--json"],
+    )
+
+    assert build_agent_command("hello world", config) == (
+        "agent-cli",
+        "run",
+        "--prompt",
+        "hello world",
+        "--json",
+    )
+
+
+def test_build_agent_command_appends_input_when_no_placeholder_is_present():
+    assert build_agent_command("hello", make_config()) == ("agent-cli", "chat", "--oneshot", "hello")

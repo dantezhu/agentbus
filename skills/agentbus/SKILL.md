@@ -88,7 +88,7 @@ Default user config path:
 ```toml
 [agent]
 id = "code"
-chat_cmd = ["agent-cli", "chat", "--oneshot"]
+chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 timeout_seconds = 1800
 
 [nats]
@@ -105,7 +105,7 @@ max_bytes = 104857600
 backup_count = 5
 ```
 
-`chat_cmd` is required and should point to the one-shot chat/task command of the target agent program. `durable` is the stable NATS JetStream consumer name used to remember worker delivery progress across restarts.
+`chat_cmd` is required and should point to the one-shot chat/task command of the target agent program. If no `{input}` placeholder is present, AgentBus appends the generated prompt as the last argument. Use `{input}` when the prompt must appear earlier, for example `chat_cmd = "agent-cli run --prompt {input} --json"`. For Hermes workers, use `chat_cmd = "hermes chat -q -Q {input}"`. `durable` is the stable NATS JetStream consumer name used to remember worker delivery progress across restarts.
 
 ## Safety rule
 

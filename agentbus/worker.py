@@ -25,10 +25,21 @@ class Publisher(Protocol):
     async def publish(self, subject: str, payload: bytes) -> None: ...
 
 
+def build_agent_command(prompt: str, config: WorkerConfig) -> tuple[str, ...]:
+    """Build the configured agent command for one prompt.
+
+    If any command argument contains the literal ``{input}``, replace that
+    placeholder with the full prompt. Otherwise append the prompt as the final
+    argument for simple one-shot CLIs.
+    """
+    if any("{input}" in arg for arg in config.agent_chat_cmd):
+        return tuple(arg.replace("{input}", prompt) for arg in config.agent_chat_cmd)
+    return (*config.agent_chat_cmd, prompt)
+
+
 async def run_agent_chat(prompt: str, config: WorkerConfig) -> ProcessResult:
     proc = await asyncio.create_subprocess_exec(
-        *config.agent_chat_cmd,
-        prompt,
+        *build_agent_command(prompt, config),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )

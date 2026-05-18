@@ -9,8 +9,13 @@
 [agent]
 id = "code"
 # Required. Either string or list is accepted.
-chat_cmd = ["agent-cli", "chat", "--oneshot"]
+# If no {input} placeholder is present, AgentBus appends the prompt as the final argument.
+chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 # chat_cmd = "agent-cli chat --oneshot"
+# Use {input} when the prompt must appear before later flags.
+# chat_cmd = "agent-cli run --prompt {input} --json"
+# Hermes example:
+# chat_cmd = "hermes chat -q -Q {input}"
 timeout_seconds = 1800
 extra_instruction = ""
 

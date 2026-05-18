@@ -60,6 +60,39 @@ skills/
 
 ## 1. Configure the NATS server
 
+NATS server source and releases:
+
+```text
+https://github.com/nats-io/nats-server
+```
+
+Official installation guide:
+
+```text
+https://docs.nats.io/running-a-nats-service/introduction/installation
+```
+
+Simple install examples:
+
+```bash
+# macOS
+brew install nats-server nats-io/nats-tools/nats
+
+# Go toolchain
+go install github.com/nats-io/nats-server/v2@latest
+go install github.com/nats-io/natscli/nats@latest
+
+# Linux packages / Docker / binaries
+# See the official installation guide above for the current commands.
+```
+
+Verify both commands are available:
+
+```bash
+nats-server --version
+nats --version
+```
+
 Copy the sample config to your server:
 
 ```bash
@@ -195,19 +228,19 @@ nats --server "$NATS_URL" stream info AGENT_RESULTS
 From PyPI:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install agentbus
+python3 -m venv env
+source env/bin/activate
+pip install --upgrade pip
+pip install agentbus
 ```
 
 From a source checkout:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e .
+python3 -m venv env
+source env/bin/activate
+pip install --upgrade pip
+pip install -e .
 ```
 
 Requires Python >= 3.11. If `python3` points to an older interpreter on your machine, use a versioned command such as `python3.11` or `python3.14`.
@@ -215,7 +248,7 @@ Requires Python >= 3.11. If `python3` points to an older interpreter on your mac
 For development and tests:
 
 ```bash
-python -m pip install -e ".[dev]"
+pip install -e ".[dev]"
 python -m pytest tests -q
 ```
 
@@ -243,6 +276,7 @@ Required worker fields:
 ```toml
 [agent]
 id = "code"
+# If your agent command accepts the prompt as its final argument, no placeholder is needed.
 chat_cmd = ["agent-cli", "chat", "--oneshot"]
 
 [nats]
@@ -254,7 +288,7 @@ A fuller example:
 ```toml
 [agent]
 id = "code"
-chat_cmd = ["agent-cli", "chat", "--oneshot"]
+chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 timeout_seconds = 1800
 extra_instruction = ""
 
@@ -285,6 +319,16 @@ max_reconnect_attempts = -1
 chat_cmd = "agent-cli chat --oneshot"
 ```
 
+If the prompt/input must appear somewhere other than the final argument, include the literal `{input}` placeholder. AgentBus replaces `{input}` with the generated task prompt. If no `{input}` placeholder is present, AgentBus appends the prompt as the last argument.
+
+```toml
+# Generic example where the prompt belongs after --prompt.
+chat_cmd = "agent-cli run --prompt {input} --json"
+
+# Hermes example.
+chat_cmd = "hermes chat -q -Q {input}"
+```
+
 `durable` is the NATS JetStream durable consumer name. It is not a password or a server address; it is the stable name NATS uses to remember this worker's delivery progress. If the worker restarts with the same durable name, NATS can continue from unacked / not-yet-delivered messages instead of treating it as a brand-new ephemeral consumer.
 
 Environment variables are supported for container deployments:
@@ -292,7 +336,7 @@ Environment variables are supported for container deployments:
 ```bash
 export AGENT_ID='code'
 export NATS_URL='tls://agent-code:agent_code_password@agentbus.example.com:7422'
-export AGENT_CHAT_CMD='agent-cli chat --oneshot'
+export AGENT_CHAT_CMD='agent-cli chat --oneshot {input}'
 export AGENTBUS_LOG_DIR='~/.agentbus/logs'
 export AGENTBUS_LOG_MAX_BYTES=104857600
 export AGENTBUS_LOG_BACKUP_COUNT=5

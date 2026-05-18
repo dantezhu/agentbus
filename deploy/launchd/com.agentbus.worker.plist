@@ -10,7 +10,7 @@
 
   <key>ProgramArguments</key>
   <array>
-    <string>/path/to/agentbus/.venv/bin/agentbus</string>
+    <string>/path/to/agentbus/env/bin/agentbus</string>
     <string>worker</string>
     <string>run</string>
     <string>--config</string>
