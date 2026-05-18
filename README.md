@@ -22,6 +22,10 @@ worker publishes result messages and ack/nak/term the task
 - Worker configuration via TOML file, with env/CLI overrides.
 - NATS subjects keep routing explicit and permissionable.
 
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE).
+
 ## Layout
 
 ```text
