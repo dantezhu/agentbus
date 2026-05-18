@@ -89,7 +89,12 @@ Default user config path:
 [agent]
 id = "code"
 chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
-timeout_seconds = 1800
+
+[worker]
+task_timeout_seconds = 1800
+max_task_bytes = 1048576
+reconnect_time_wait_seconds = 2
+max_reconnect_attempts = -1
 
 [nats]
 url = "tls://username:password@agentbus.example.com:7422"

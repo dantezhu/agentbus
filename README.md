@@ -282,8 +282,13 @@ A fuller example:
 [agent]
 id = "code"
 chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
-timeout_seconds = 1800
 extra_instruction = ""
+
+[worker]
+task_timeout_seconds = 1800
+max_task_bytes = 1048576
+reconnect_time_wait_seconds = 2
+max_reconnect_attempts = -1
 
 [nats]
 url = "tls://agent-code:agent_code_password@agentbus.example.com:7422"
@@ -298,12 +303,6 @@ dir = "~/.agentbus/logs"
 max_bytes = 104857600
 backup_count = 5
 
-[limits]
-max_payload_bytes = 1048576
-
-[connection]
-reconnect_time_wait_seconds = 2
-max_reconnect_attempts = -1
 ```
 
 `chat_cmd` can also be a string:
@@ -333,7 +332,7 @@ export AGENT_CHAT_CMD='agent-cli chat --oneshot {input}'
 export AGENTBUS_LOG_DIR='~/.agentbus/logs'
 export AGENTBUS_LOG_MAX_BYTES=104857600
 export AGENTBUS_LOG_BACKUP_COUNT=5
-export AGENT_TASK_TIMEOUT_SECONDS=1800
+export AGENTBUS_TASK_TIMEOUT_SECONDS=1800
 agentbus worker run
 ```
 

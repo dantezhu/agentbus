@@ -19,8 +19,13 @@ def test_load_config_file_supports_grouped_toml_sections(tmp_path):
 [agent]
 id = "code"
 chat_cmd = ["agent-cli", "chat", "--oneshot"]
-timeout_seconds = 900
 extra_instruction = "Keep results concise."
+
+[worker]
+task_timeout_seconds = 900
+max_task_bytes = 2048
+reconnect_time_wait_seconds = 3
+max_reconnect_attempts = -1
 
 [nats]
 url = "nats://agent-code:secret@example:4222"
@@ -34,12 +39,6 @@ dir = "~/custom-agentbus-logs"
 max_bytes = 100000000
 backup_count = 7
 
-[limits]
-max_payload_bytes = 2048
-
-[connection]
-reconnect_time_wait_seconds = 3
-max_reconnect_attempts = -1
 """.strip()
     )
 
@@ -53,12 +52,12 @@ max_reconnect_attempts = -1
         durable="agent-code",
         task_subject="agent.code.tasks",
         default_result_subject="agent.main.results",
-        timeout_seconds=900,
+        task_timeout_seconds=900,
         extra_instruction="Keep results concise.",
         log_dir="~/custom-agentbus-logs",
         log_max_bytes=100000000,
         log_backup_count=7,
-        max_payload_bytes=2048,
+        max_task_bytes=2048,
         reconnect_time_wait_seconds=3,
         max_reconnect_attempts=-1,
     )
@@ -71,7 +70,9 @@ def test_config_precedence_cli_over_env_over_file(tmp_path):
 [agent]
 id = "file-agent"
 chat_cmd = "agent-cli chat --oneshot"
-timeout_seconds = 300
+
+[worker]
+task_timeout_seconds = 300
 
 [nats]
 url = "nats://file@example:4222"
@@ -96,7 +97,7 @@ stream = "FILE_STREAM"
         args,
         env={
             "NATS_URL": "nats://env@example:4222",
-            "AGENT_TASK_TIMEOUT_SECONDS": "600",
+            "AGENTBUS_TASK_TIMEOUT_SECONDS": "600",
         },
     )
 
@@ -105,7 +106,7 @@ stream = "FILE_STREAM"
     assert config.stream == "FILE_STREAM"
     assert config.task_subject == "agent.cli.tasks"
     assert config.agent_chat_cmd == ["agent-cli", "chat", "--oneshot"]
-    assert config.timeout_seconds == 600
+    assert config.task_timeout_seconds == 600
 
 
 def test_agent_chat_cmd_is_required_and_unknown_names_are_rejected(tmp_path):
@@ -162,7 +163,7 @@ def test_agent_prefixed_env_names_are_supported():
             "AGENTBUS_LOG_DIR": "~/env-agentbus-logs",
             "AGENTBUS_LOG_MAX_BYTES": "12345",
             "AGENTBUS_LOG_BACKUP_COUNT": "4",
-            "AGENTBUS_MAX_PAYLOAD_BYTES": "4096",
+            "AGENTBUS_MAX_TASK_BYTES": "4096",
         }
     )
 
@@ -172,4 +173,4 @@ def test_agent_prefixed_env_names_are_supported():
     assert config.log_dir == "~/env-agentbus-logs"
     assert config.log_max_bytes == 12345
     assert config.log_backup_count == 4
-    assert config.max_payload_bytes == 4096
+    assert config.max_task_bytes == 4096

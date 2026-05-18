@@ -18,12 +18,12 @@ class WorkerConfig:
     durable: str | None = None
     task_subject: str | None = None
     default_result_subject: str = "agent.main.results"
-    timeout_seconds: int = 1800
+    task_timeout_seconds: int = 1800
     extra_instruction: str = ""
     log_dir: str = "~/.agentbus/logs"
     log_max_bytes: int = 100 * 1024 * 1024
     log_backup_count: int = 5
-    max_payload_bytes: int = 1024 * 1024
+    max_task_bytes: int = 1024 * 1024
     reconnect_time_wait_seconds: int = 2
     max_reconnect_attempts: int = -1
 
@@ -61,7 +61,6 @@ SECTION_FIELD_MAP = {
     "agent": {
         "id": "agent_id",
         "chat_cmd": "agent_chat_cmd",
-        "timeout_seconds": "timeout_seconds",
         "extra_instruction": "extra_instruction",
     },
     "nats": {
@@ -71,17 +70,16 @@ SECTION_FIELD_MAP = {
         "task_subject": "task_subject",
         "default_result_subject": "default_result_subject",
     },
+    "worker": {
+        "task_timeout_seconds": "task_timeout_seconds",
+        "max_task_bytes": "max_task_bytes",
+        "reconnect_time_wait_seconds": "reconnect_time_wait_seconds",
+        "max_reconnect_attempts": "max_reconnect_attempts",
+    },
     "log": {
         "dir": "log_dir",
         "max_bytes": "log_max_bytes",
         "backup_count": "log_backup_count",
-    },
-    "limits": {
-        "max_payload_bytes": "max_payload_bytes",
-    },
-    "connection": {
-        "reconnect_time_wait_seconds": "reconnect_time_wait_seconds",
-        "max_reconnect_attempts": "max_reconnect_attempts",
     },
 }
 
@@ -111,11 +109,6 @@ def load_config_file_data(path: str | os.PathLike[str]) -> dict[str, Any]:
     config_path = Path(path).expanduser()
     with config_path.open("rb") as fh:
         raw = tomllib.load(fh)
-    if "worker" in raw:
-        worker = raw["worker"]
-        if not isinstance(worker, dict):
-            raise ValueError("config file [worker] must be a table")
-        return dict(worker)
     return flatten_grouped_config(dict(raw))
 
 
@@ -136,12 +129,12 @@ def env_config_data(env: os._Environ[str] | dict[str, str]) -> dict[str, Any]:
         "AGENTBUS_TASK_SUBJECT": "task_subject",
         "AGENTBUS_DEFAULT_RESULT_SUBJECT": "default_result_subject",
         "AGENT_CHAT_CMD": "agent_chat_cmd",
-        "AGENT_TASK_TIMEOUT_SECONDS": "timeout_seconds",
         "AGENTBUS_EXTRA_INSTRUCTION": "extra_instruction",
         "AGENTBUS_LOG_DIR": "log_dir",
         "AGENTBUS_LOG_MAX_BYTES": "log_max_bytes",
         "AGENTBUS_LOG_BACKUP_COUNT": "log_backup_count",
-        "AGENTBUS_MAX_PAYLOAD_BYTES": "max_payload_bytes",
+        "AGENTBUS_TASK_TIMEOUT_SECONDS": "task_timeout_seconds",
+        "AGENTBUS_MAX_TASK_BYTES": "max_task_bytes",
         "AGENTBUS_RECONNECT_WAIT_SECONDS": "reconnect_time_wait_seconds",
         "AGENTBUS_MAX_RECONNECT_ATTEMPTS": "max_reconnect_attempts",
     }
@@ -152,12 +145,12 @@ def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
     defaults = {
         "stream": "AGENT_TASKS",
         "default_result_subject": "agent.main.results",
-        "timeout_seconds": 1800,
+        "task_timeout_seconds": 1800,
         "extra_instruction": "",
         "log_dir": str(DEFAULT_LOG_DIR),
         "log_max_bytes": 100 * 1024 * 1024,
         "log_backup_count": 5,
-        "max_payload_bytes": 1024 * 1024,
+        "max_task_bytes": 1024 * 1024,
         "reconnect_time_wait_seconds": 2,
         "max_reconnect_attempts": -1,
     }
@@ -169,12 +162,12 @@ def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
         "task_subject",
         "default_result_subject",
         "agent_chat_cmd",
-        "timeout_seconds",
+        "task_timeout_seconds",
         "extra_instruction",
         "log_dir",
         "log_max_bytes",
         "log_backup_count",
-        "max_payload_bytes",
+        "max_task_bytes",
         "reconnect_time_wait_seconds",
         "max_reconnect_attempts",
     }
@@ -198,12 +191,12 @@ def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
         durable=str(durable) if durable else agent_id,
         task_subject=str(task_subject) if task_subject else f"agent.{agent_id}.tasks",
         default_result_subject=str(merged["default_result_subject"]),
-        timeout_seconds=int(merged["timeout_seconds"]),
+        task_timeout_seconds=int(merged["task_timeout_seconds"]),
         extra_instruction=str(merged["extra_instruction"]),
         log_dir=str(merged["log_dir"]),
         log_max_bytes=int(merged["log_max_bytes"]),
         log_backup_count=int(merged["log_backup_count"]),
-        max_payload_bytes=int(merged["max_payload_bytes"]),
+        max_task_bytes=int(merged["max_task_bytes"]),
         reconnect_time_wait_seconds=int(merged["reconnect_time_wait_seconds"]),
         max_reconnect_attempts=int(merged["max_reconnect_attempts"]),
     )

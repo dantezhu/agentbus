@@ -44,11 +44,11 @@ async def run_agent_chat(prompt: str, config: WorkerConfig) -> ProcessResult:
         stderr=asyncio.subprocess.PIPE,
     )
     try:
-        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=config.timeout_seconds)
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=config.task_timeout_seconds)
     except asyncio.TimeoutError:
         proc.kill()
         await proc.wait()
-        return ProcessResult(returncode=124, stdout="", stderr=f"Agent command timed out after {config.timeout_seconds}s")
+        return ProcessResult(returncode=124, stdout="", stderr=f"Agent command timed out after {config.task_timeout_seconds}s")
     return ProcessResult(
         returncode=proc.returncode or 0,
         stdout=stdout.decode("utf-8", errors="replace"),
@@ -86,8 +86,8 @@ class AgentBusWorker:
 
     async def handle_message(self, msg) -> None:
         try:
-            if len(msg.data) > self.config.max_payload_bytes:
-                raise ValueError(f"message exceeds max payload bytes: {len(msg.data)}")
+            if len(msg.data) > self.config.max_task_bytes:
+                raise ValueError(f"message exceeds max task bytes: {len(msg.data)}")
             task = load_task(msg.data)
         except Exception:
             logger.exception("Invalid task payload; terminating message")
