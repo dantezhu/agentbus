@@ -40,26 +40,33 @@ Worker side:
 ## Layout
 
 ```text
-agentbus/__init__.py                         package metadata
-agentbus/cli.py                              agentbus command-line entrypoint
-agentbus/config.py                           TOML configuration
-agentbus/messages.py                         task/result schema and prompt builder
-agentbus/publish.py                          task publishing helpers
-agentbus/result.py                           result reading helpers
-agentbus/worker.py                           NATS JetStream worker runtime
-config/agentbus.worker.example.toml          worker config template
-config/nats-server.conf                      sample NATS server config
-scripts/stream-setup.sh                      JetStream stream setup helper
-deploy/launchd/com.agentbus.worker.plist     macOS launchd template
-deploy/supervisor/agentbus-worker.conf       Supervisor template
-deploy/systemd/agentbus-worker.service       systemd template
-skills/agentbus/SKILL.md                     agent-facing usage skill
-tests/test_*.py                              unit and docs tests
-LICENSE
-README.md
-pyproject.toml
-requirements.txt
-requirements-dev.txt
+.
+├── agentbus/
+│   ├── __init__.py      package metadata
+│   ├── cli.py           agentbus command-line entrypoint
+│   ├── config.py        TOML configuration
+│   ├── messages.py      task/result schema and prompt builder
+│   ├── publish.py       task publishing helpers
+│   ├── result.py        result reading helpers
+│   └── worker.py        NATS JetStream worker runtime
+├── config/
+│   ├── agentbus.worker.example.toml
+│   └── nats-server.conf
+├── deploy/
+│   ├── launchd/com.agentbus.worker.plist
+│   ├── supervisor/agentbus-worker.conf
+│   └── systemd/agentbus-worker.service
+├── scripts/
+│   └── stream-setup.sh
+├── skills/
+│   └── agentbus/SKILL.md
+├── tests/
+│   └── test_*.py
+├── LICENSE
+├── README.md
+├── pyproject.toml
+├── requirements-dev.txt
+└── requirements.txt
 ```
 
 ## 1. Configure the NATS server

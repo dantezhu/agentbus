@@ -80,29 +80,32 @@ def test_deploy_templates_use_env_virtualenv_path():
     assert "autorestart=true" in supervisor
 
 
-def test_readme_layout_lists_primary_project_files():
+def test_readme_layout_lists_primary_project_files_as_tree():
     readme = (ROOT / "README.md").read_text()
 
-    for path in (
-        "agentbus/__init__.py",
-        "agentbus/cli.py",
-        "agentbus/config.py",
-        "agentbus/messages.py",
-        "agentbus/publish.py",
-        "agentbus/result.py",
-        "agentbus/worker.py",
-        "config/agentbus.worker.example.toml",
-        "config/nats-server.conf",
-        "scripts/stream-setup.sh",
-        "deploy/launchd/com.agentbus.worker.plist",
-        "deploy/supervisor/agentbus-worker.conf",
-        "deploy/systemd/agentbus-worker.service",
-        "skills/agentbus/SKILL.md",
-        "tests/test_*.py",
-        "LICENSE",
-        "README.md",
-        "pyproject.toml",
-        "requirements.txt",
-        "requirements-dev.txt",
-    ):
-        assert path in readme
+    assert "├── agentbus/" in readme
+    assert "│   ├── __init__.py" in readme
+    assert "│   ├── cli.py" in readme
+    assert "│   ├── config.py" in readme
+    assert "│   ├── messages.py" in readme
+    assert "│   ├── publish.py" in readme
+    assert "│   ├── result.py" in readme
+    assert "│   └── worker.py" in readme
+    assert "├── config/" in readme
+    assert "│   ├── agentbus.worker.example.toml" in readme
+    assert "│   └── nats-server.conf" in readme
+    assert "├── deploy/" in readme
+    assert "│   ├── launchd/com.agentbus.worker.plist" in readme
+    assert "│   ├── supervisor/agentbus-worker.conf" in readme
+    assert "│   └── systemd/agentbus-worker.service" in readme
+    assert "├── scripts/" in readme
+    assert "│   └── stream-setup.sh" in readme
+    assert "├── skills/" in readme
+    assert "│   └── agentbus/SKILL.md" in readme
+    assert "├── tests/" in readme
+    assert "│   └── test_*.py" in readme
+    assert "├── LICENSE" in readme
+    assert "├── README.md" in readme
+    assert "├── pyproject.toml" in readme
+    assert "├── requirements-dev.txt" in readme
+    assert "└── requirements.txt" in readme
