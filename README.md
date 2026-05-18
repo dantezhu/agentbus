@@ -84,20 +84,22 @@ nats-server --version
 nats --version
 ```
 
-Copy the sample config to your server:
+Copy the sample config to the server's NATS config path. The upstream systemd example uses `/etc/nats-server.conf`; some distro packages may use a different path, so match the service you install.
 
 ```bash
-sudo mkdir -p /etc/nats /data/jetstream /etc/nats/tls
-sudo cp config/nats-server.conf /etc/nats/agentbus.conf
-sudo chmod 600 /etc/nats/agentbus.conf
+sudo mkdir -p /data/jetstream /etc/nats/tls
+sudo cp config/nats-server.conf /etc/nats-server.conf
+sudo chmod 600 /etc/nats-server.conf
 sudo chown -R nats:nats /data/jetstream 2>/dev/null || true
 ```
 
 Edit the config before starting the server:
 
 ```bash
-sudo $EDITOR /etc/nats/agentbus.conf
+sudo $EDITOR /etc/nats-server.conf
 ```
+
+If you prefer a project-specific filename such as `/etc/nats/agentbus.conf`, that is also fine, but then make sure your service or start command explicitly uses `nats-server -c /etc/nats/agentbus.conf`.
 
 At minimum, change these values:
 
@@ -148,7 +150,7 @@ sudo install -m 0600 /etc/letsencrypt/live/agentbus.example.com/privkey.pem /etc
 sudo chown -R nats:nats /etc/nats/tls 2>/dev/null || true
 ```
 
-Then enable this block in `/etc/nats/agentbus.conf`:
+Then enable this block in the NATS config file:
 
 ```text
 tls {
@@ -168,7 +170,7 @@ If you do not enable TLS, use `nats://...`, but avoid exposing that setup to the
 Start the server with the config:
 
 ```bash
-nats-server -c /etc/nats/agentbus.conf
+nats-server -c /etc/nats-server.conf
 ```
 
 For a real deployment, run this under your service manager, for example systemd, Docker, or a managed NATS service.

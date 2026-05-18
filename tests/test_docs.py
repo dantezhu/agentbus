@@ -21,6 +21,7 @@ def test_readme_documents_nats_server_source_and_install_steps():
 
     assert "https://github.com/nats-io/nats-server" in readme
     assert "https://docs.nats.io/running-a-nats-service/introduction/installation" in readme
+    assert "nats-server -c /etc/nats-server.conf" in readme
     assert "nats-server -c /etc/nats/agentbus.conf" in readme
     assert "nats --server \"$NATS_URL\" stream ls" in readme
 
