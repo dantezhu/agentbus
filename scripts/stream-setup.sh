@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${NATS_URL:?Set NATS_URL, e.g. tls://username:password@agentbus.example.com:7422}"
+if [[ $# -ne 1 ]]; then
+  echo "Usage: $0 <nats-url>" >&2
+  echo "Example: $0 tls://username:password@agentbus.example.com:7422" >&2
+  exit 2
+fi
 
-nats --server "$NATS_URL" stream add AGENT_TASKS \
+nats_url="$1"
+
+nats --server "$nats_url" stream add AGENT_TASKS \
   --subjects 'agent.*.tasks' \
   --storage file \
   --retention limits \
@@ -12,7 +18,7 @@ nats --server "$NATS_URL" stream add AGENT_TASKS \
   --ack \
   --defaults
 
-nats --server "$NATS_URL" stream add AGENT_RESULTS \
+nats --server "$nats_url" stream add AGENT_RESULTS \
   --subjects 'agent.*.results' \
   --storage file \
   --retention limits \

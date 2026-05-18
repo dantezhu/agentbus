@@ -23,7 +23,7 @@ def test_readme_documents_nats_server_source_and_install_steps():
     assert "https://docs.nats.io/running-a-nats-service/introduction/installation" in readme
     assert "nats-server -c /etc/nats-server.conf" in readme
     assert "nats-server -c /etc/nats/agentbus.conf" in readme
-    assert "nats --server \"$NATS_URL\" stream ls" in readme
+    assert "nats --server 'tls://agent-main:agent_main_password@agentbus.example.com:7422' stream ls" in readme
 
 
 def test_readme_and_example_document_chat_cmd_input_placeholder_and_hermes():
@@ -33,7 +33,18 @@ def test_readme_and_example_document_chat_cmd_input_placeholder_and_hermes():
 
     for text in (readme, example, skill):
         assert "{input}" in text
-        assert "hermes chat -q -Q {input}" in text
+        assert '["hermes", "chat", "-q", "-Q", "{input}"]' in text
+
+
+def test_docs_do_not_recommend_environment_variable_configuration():
+    readme = (ROOT / "README.md").read_text()
+    example = (ROOT / "config" / "agentbus.worker.example.toml").read_text()
+    skill = (ROOT / "skills" / "agentbus" / "SKILL.md").read_text()
+
+    for text in (readme, example, skill):
+        assert "export NATS_URL" not in text
+        assert "AGENT_CHAT_CMD" not in text
+        assert "AGENTBUS_LOG_DIR" not in text
 
 
 def test_deploy_templates_use_env_virtualenv_path():

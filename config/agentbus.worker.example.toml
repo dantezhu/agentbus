@@ -8,14 +8,13 @@
 
 [agent]
 id = "code"
-# Required. Either string or list is accepted.
-# If no {input} placeholder is present, AgentBus appends the prompt as the final argument.
+# Required. Either string or list is accepted, but list form is safest because
+# the generated prompt replaces one argument exactly.
 chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
-# chat_cmd = "agent-cli chat --oneshot"
-# Use {input} when the prompt must appear before later flags.
-# chat_cmd = "agent-cli run --prompt {input} --json"
+# Use {input} where the generated prompt belongs.
+# chat_cmd = ["agent-cli", "run", "--prompt", "{input}", "--json"]
 # Hermes example:
-# chat_cmd = "hermes chat -q -Q {input}"
+# chat_cmd = ["hermes", "chat", "-q", "-Q", "{input}"]
 extra_instruction = ""
 
 [worker]

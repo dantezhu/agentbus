@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import argparse
 from dataclasses import dataclass
 from pathlib import Path
 import os
@@ -27,13 +26,16 @@ class WorkerConfig:
     reconnect_time_wait_seconds: int = 2
     max_reconnect_attempts: int = -1
 
-    @classmethod
-    def from_env(cls) -> "WorkerConfig":
-        return config_from_sources(env=os.environ)
-
     @property
     def consumer_name(self) -> str:
         return self.durable or self.agent_id
+
+
+@dataclass(frozen=True)
+class PublishConfig:
+    nats_url: str
+    from_agent: str = "agent-main"
+    reply_to: str = "agent.main.results"
 
 
 DEFAULT_LOG_DIR = Path.home() / ".agentbus" / "logs"
@@ -43,18 +45,6 @@ DEFAULT_CONFIG_PATHS = (
     Path.home() / ".agentbus" / "config.toml",
     Path("/etc/agentbus/agentbus.toml"),
 )
-
-
-def normalize_agent_chat_cmd(value: Any) -> list[str]:
-    if isinstance(value, str):
-        return shlex.split(value)
-    if isinstance(value, list) and all(isinstance(item, str) for item in value):
-        return value
-    raise ValueError("agent_chat_cmd must be a string or list of strings")
-
-
-def load_config_file(path: str | os.PathLike[str]) -> WorkerConfig:
-    return config_from_mapping(load_config_file_data(path))
 
 
 SECTION_FIELD_MAP = {
@@ -82,6 +72,22 @@ SECTION_FIELD_MAP = {
         "backup_count": "log_backup_count",
     },
 }
+
+
+def normalize_agent_chat_cmd(value: Any) -> list[str]:
+    if isinstance(value, str):
+        command = shlex.split(value)
+    elif isinstance(value, list) and all(isinstance(item, str) for item in value):
+        command = value
+    else:
+        raise ValueError("agent_chat_cmd must be a string or list of strings")
+    if not any("{input}" in item for item in command):
+        raise ValueError("agent_chat_cmd must include the literal {input} placeholder")
+    return command
+
+
+def load_config_file(path: str | os.PathLike[str]) -> WorkerConfig:
+    return config_from_mapping(load_config_file_data(path))
 
 
 def flatten_grouped_config(data: dict[str, Any]) -> dict[str, Any]:
@@ -118,27 +124,6 @@ def find_default_config_file() -> Path | None:
         if expanded.exists():
             return expanded
     return None
-
-
-def env_config_data(env: os._Environ[str] | dict[str, str]) -> dict[str, Any]:
-    mapping = {
-        "AGENT_ID": "agent_id",
-        "NATS_URL": "nats_url",
-        "AGENTBUS_STREAM": "stream",
-        "AGENTBUS_DURABLE": "durable",
-        "AGENTBUS_TASK_SUBJECT": "task_subject",
-        "AGENTBUS_DEFAULT_RESULT_SUBJECT": "default_result_subject",
-        "AGENT_CHAT_CMD": "agent_chat_cmd",
-        "AGENTBUS_EXTRA_INSTRUCTION": "extra_instruction",
-        "AGENTBUS_LOG_DIR": "log_dir",
-        "AGENTBUS_LOG_MAX_BYTES": "log_max_bytes",
-        "AGENTBUS_LOG_BACKUP_COUNT": "log_backup_count",
-        "AGENTBUS_TASK_TIMEOUT_SECONDS": "task_timeout_seconds",
-        "AGENTBUS_MAX_TASK_BYTES": "max_task_bytes",
-        "AGENTBUS_RECONNECT_WAIT_SECONDS": "reconnect_time_wait_seconds",
-        "AGENTBUS_MAX_RECONNECT_ATTEMPTS": "max_reconnect_attempts",
-    }
-    return {key: env[env_name] for env_name, key in mapping.items() if env_name in env}
 
 
 def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
@@ -202,32 +187,25 @@ def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
     )
 
 
-def config_from_sources(
-    *,
-    config_path: str | os.PathLike[str] | None = None,
-    env: os._Environ[str] | dict[str, str] | None = None,
-    overrides: dict[str, Any] | None = None,
-) -> WorkerConfig:
-    data: dict[str, Any] = {}
+def config_from_sources(*, config_path: str | os.PathLike[str] | None = None) -> WorkerConfig:
     path = Path(config_path).expanduser() if config_path else find_default_config_file()
-    if path is not None:
-        data.update(load_config_file_data(path))
-    if env is not None:
-        data.update(env_config_data(env))
-    if overrides:
-        data.update({k: v for k, v in overrides.items() if v is not None})
-    return config_from_mapping(data)
+    if path is None:
+        raise ValueError("config file is required; pass --config or create ~/.agentbus/config.toml")
+    return config_from_mapping(load_config_file_data(path))
 
 
-def build_config(args: argparse.Namespace, env: os._Environ[str] | dict[str, str] | None = None) -> WorkerConfig:
-    overrides = {
-        "agent_id": args.agent_id,
-        "nats_url": args.nats_url,
-        "stream": args.stream,
-        "task_subject": args.subject,
-        "durable": args.durable,
-        "log_dir": args.log_dir,
-        "log_max_bytes": args.log_max_bytes,
-        "log_backup_count": args.log_backup_count,
-    }
-    return config_from_sources(config_path=args.config, env=os.environ if env is None else env, overrides=overrides)
+def build_config(config_path: str | os.PathLike[str] | None) -> WorkerConfig:
+    return config_from_sources(config_path=config_path)
+
+
+def load_publish_config(config_path: str | os.PathLike[str] | None) -> PublishConfig:
+    path = Path(config_path).expanduser() if config_path else find_default_config_file()
+    if path is None:
+        raise ValueError("config file is required; pass --config or create ~/.agentbus/config.toml")
+    data = load_config_file_data(path)
+    nats_url = data.get("nats_url")
+    if not nats_url:
+        raise ValueError("missing required config field: nats_url")
+    from_agent = str(data.get("agent_id") or "agent-main")
+    reply_to = str(data.get("default_result_subject") or "agent.main.results")
+    return PublishConfig(nats_url=str(nats_url), from_agent=from_agent, reply_to=reply_to)

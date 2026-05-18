@@ -1,10 +1,8 @@
-import argparse
-
 from pathlib import Path
 
 import pytest
 
-from agentbus.config import DEFAULT_CONFIG_PATHS, DEFAULT_LOG_DIR, WorkerConfig, build_config, config_from_sources, load_config_file
+from agentbus.config import DEFAULT_CONFIG_PATHS, DEFAULT_LOG_DIR, PublishConfig, WorkerConfig, build_config, config_from_sources, load_config_file, load_publish_config
 
 
 def test_default_paths_use_home_agentbus_directory():
@@ -18,7 +16,7 @@ def test_load_config_file_supports_grouped_toml_sections(tmp_path):
         """
 [agent]
 id = "code"
-chat_cmd = ["agent-cli", "chat", "--oneshot"]
+chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 extra_instruction = "Keep results concise."
 
 [worker]
@@ -47,7 +45,7 @@ backup_count = 7
     assert config == WorkerConfig(
         agent_id="code",
         nats_url="nats://agent-code:secret@example:4222",
-        agent_chat_cmd=["agent-cli", "chat", "--oneshot"],
+        agent_chat_cmd=["agent-cli", "chat", "--oneshot", "{input}"],
         stream="AGENT_TASKS",
         durable="agent-code",
         task_subject="agent.code.tasks",
@@ -63,13 +61,13 @@ backup_count = 7
     )
 
 
-def test_config_precedence_cli_over_env_over_file(tmp_path):
+def test_build_config_reads_config_file_without_env_or_cli_overrides(tmp_path, monkeypatch):
     config_path = tmp_path / "agentbus.toml"
     config_path.write_text(
         """
 [agent]
 id = "file-agent"
-chat_cmd = "agent-cli chat --oneshot"
+chat_cmd = "agent-cli chat --oneshot {input}"
 
 [worker]
 task_timeout_seconds = 300
@@ -79,34 +77,17 @@ url = "nats://file@example:4222"
 stream = "FILE_STREAM"
 """.strip()
     )
+    monkeypatch.setenv("NATS_URL", "nats://env@example:4222")
+    monkeypatch.setenv("AGENT_ID", "env-agent")
 
-    args = argparse.Namespace(
-        config=str(config_path),
-        agent_id="cli-agent",
-        nats_url=None,
-        stream=None,
-        subject="agent.cli.tasks",
-        durable=None,
-        log_dir=None,
-        log_max_bytes=None,
-        log_backup_count=None,
-        log_level="INFO",
-    )
+    config = build_config(str(config_path))
 
-    config = build_config(
-        args,
-        env={
-            "NATS_URL": "nats://env@example:4222",
-            "AGENTBUS_TASK_TIMEOUT_SECONDS": "600",
-        },
-    )
-
-    assert config.agent_id == "cli-agent"
-    assert config.nats_url == "nats://env@example:4222"
+    assert config.agent_id == "file-agent"
+    assert config.nats_url == "nats://file@example:4222"
     assert config.stream == "FILE_STREAM"
-    assert config.task_subject == "agent.cli.tasks"
-    assert config.agent_chat_cmd == ["agent-cli", "chat", "--oneshot"]
-    assert config.task_timeout_seconds == 600
+    assert config.task_subject == "agent.file-agent.tasks"
+    assert config.agent_chat_cmd == ["agent-cli", "chat", "--oneshot", "{input}"]
+    assert config.task_timeout_seconds == 300
 
 
 def test_agent_chat_cmd_is_required_and_unknown_names_are_rejected(tmp_path):
@@ -128,7 +109,7 @@ url = "nats://example:4222"
         """
 [agent]
 id = "code"
-chat_cmd = "agent-cli"
+chat_cmd = "agent-cli {input}"
 old_cmd = "some-cmd"
 
 [nats]
@@ -138,8 +119,30 @@ url = "nats://example:4222"
     with pytest.raises(ValueError, match="unknown config fields: old_cmd"):
         load_config_file(old_name)
 
-    with pytest.raises(ValueError, match="agent_id"):
-        config_from_sources(env={"OLD_AGENT_ID": "code", "NATS_URL": "nats://example:4222", "AGENT_CHAT_CMD": "agent-cli"})
+
+def test_agent_chat_cmd_must_include_input_placeholder(tmp_path):
+    config_path = tmp_path / "missing-placeholder.toml"
+    config_path.write_text(
+        """
+[agent]
+id = "code"
+chat_cmd = "agent-cli chat --oneshot"
+
+[nats]
+url = "nats://example:4222"
+""".strip()
+    )
+
+    with pytest.raises(ValueError, match=r"literal \{input\} placeholder"):
+        load_config_file(config_path)
+
+
+def test_config_from_sources_requires_config_file_when_default_is_absent(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("agentbus.config.DEFAULT_CONFIG_PATHS", (tmp_path / "missing.toml",))
+
+    with pytest.raises(ValueError, match="config file is required"):
+        config_from_sources()
 
 
 def test_example_worker_config_uses_grouped_sections_and_loads():
@@ -153,24 +156,22 @@ def test_example_worker_config_uses_grouped_sections_and_loads():
     assert config.log_backup_count == 5
 
 
-def test_agent_prefixed_env_names_are_supported():
-    config = config_from_sources(
-        env={
-            "AGENT_ID": "code",
-            "NATS_URL": "nats://example:4222",
-            "AGENT_CHAT_CMD": "other-agent run --prompt",
-            "AGENTBUS_EXTRA_INSTRUCTION": "env instruction",
-            "AGENTBUS_LOG_DIR": "~/env-agentbus-logs",
-            "AGENTBUS_LOG_MAX_BYTES": "12345",
-            "AGENTBUS_LOG_BACKUP_COUNT": "4",
-            "AGENTBUS_MAX_TASK_BYTES": "4096",
-        }
-    )
+def test_load_publish_config_uses_config_file_without_environment(tmp_path, monkeypatch):
+    config_path = tmp_path / "publisher.toml"
+    config_path.write_text(
+        """
+[agent]
+id = "agent-main"
 
-    assert config.agent_id == "code"
-    assert config.agent_chat_cmd == ["other-agent", "run", "--prompt"]
-    assert config.extra_instruction == "env instruction"
-    assert config.log_dir == "~/env-agentbus-logs"
-    assert config.log_max_bytes == 12345
-    assert config.log_backup_count == 4
-    assert config.max_task_bytes == 4096
+[nats]
+url = "tls://agent-main:secret@agentbus.example.com:7422"
+default_result_subject = "agent.main.results"
+""".strip()
+    )
+    monkeypatch.setenv("NATS_URL", "tls://wrong@example.com:7422")
+
+    assert load_publish_config(config_path) == PublishConfig(
+        nats_url="tls://agent-main:secret@agentbus.example.com:7422",
+        from_agent="agent-main",
+        reply_to="agent.main.results",
+    )

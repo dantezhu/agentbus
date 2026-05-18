@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import uuid
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -72,7 +71,7 @@ async def publish_task(
     publisher: PublisherFn = nats_publisher,
 ) -> dict[str, Any]:
     if not nats_url:
-        raise ValueError("nats_url is required; pass --nats-url or set NATS_URL")
+        raise ValueError("nats_url is required in the config file")
     target = normalize_target_agent(target_agent)
     message = build_task_message(
         task_id=task_id or f"task-{uuid.uuid4()}",
@@ -87,7 +86,3 @@ async def publish_task(
     publish_subject = subject or f"agent.{target}.tasks"
     await publisher(nats_url, publish_subject, dump_json(message))
     return message
-
-
-def nats_url_from_env() -> str | None:
-    return os.environ.get("NATS_URL")

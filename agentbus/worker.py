@@ -28,13 +28,11 @@ class Publisher(Protocol):
 def build_agent_command(prompt: str, config: WorkerConfig) -> tuple[str, ...]:
     """Build the configured agent command for one prompt.
 
-    If any command argument contains the literal ``{input}``, replace that
-    placeholder with the full prompt. Otherwise append the prompt as the final
-    argument for simple one-shot CLIs.
+    The command must contain the literal ``{input}`` placeholder. The config
+    loader validates this, so execution is explicit instead of relying on an
+    implicit final-argument append rule.
     """
-    if any("{input}" in arg for arg in config.agent_chat_cmd):
-        return tuple(arg.replace("{input}", prompt) for arg in config.agent_chat_cmd)
-    return (*config.agent_chat_cmd, prompt)
+    return tuple(arg.replace("{input}", prompt) for arg in config.agent_chat_cmd)
 
 
 async def run_agent_chat(prompt: str, config: WorkerConfig) -> ProcessResult:

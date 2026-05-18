@@ -18,8 +18,8 @@ worker publishes result message and ack/nak/term the task
 
 - No bot-to-bot chat dependency.
 - No direct inbound access needed for worker machines.
-- Generic agent command integration through TOML `chat_cmd` / env `AGENT_CHAT_CMD`.
-- Worker configuration via TOML file, with env/CLI overrides.
+- Generic agent command integration through TOML `chat_cmd`.
+- Worker and publisher configuration via TOML files.
 - NATS subjects keep routing explicit and permissionable.
 - Durable task delivery through JetStream, not plain fire-and-forget pub/sub.
 
@@ -41,7 +41,7 @@ Worker side:
 
 ```text
 agentbus/
-  config.py      TOML/env/CLI configuration
+  config.py      TOML configuration
   messages.py    task/result schema and prompt builder
   publish.py     task publishing helpers
   worker.py      NATS JetStream worker runtime
@@ -197,8 +197,7 @@ After the NATS server is running, create the task and result streams.
 Use a user with JetStream API permission. In the sample config, `agent-main` has `$JS.API.>` access:
 
 ```bash
-export NATS_URL='tls://agent-main:agent_main_password@agentbus.example.com:7422'
-./scripts/stream-setup.sh
+./scripts/stream-setup.sh 'tls://agent-main:agent_main_password@agentbus.example.com:7422'
 ```
 
 This creates:
@@ -211,9 +210,9 @@ AGENT_RESULTS   subjects: agent.*.results  max age: 30d
 You can inspect the streams with:
 
 ```bash
-nats --server "$NATS_URL" stream ls
-nats --server "$NATS_URL" stream info AGENT_TASKS
-nats --server "$NATS_URL" stream info AGENT_RESULTS
+nats --server 'tls://agent-main:agent_main_password@agentbus.example.com:7422' stream ls
+nats --server 'tls://agent-main:agent_main_password@agentbus.example.com:7422' stream info AGENT_TASKS
+nats --server 'tls://agent-main:agent_main_password@agentbus.example.com:7422' stream info AGENT_RESULTS
 ```
 
 ## 3. Install the worker
@@ -269,8 +268,8 @@ Required worker fields:
 ```toml
 [agent]
 id = "code"
-# If your agent command accepts the prompt as its final argument, no placeholder is needed.
-chat_cmd = ["agent-cli", "chat", "--oneshot"]
+# {input} is required and marks where AgentBus inserts the generated prompt.
+chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 
 [nats]
 url = "tls://agent-code:agent_code_password@agentbus.example.com:7422"
@@ -305,42 +304,22 @@ backup_count = 5
 
 ```
 
-`chat_cmd` can also be a string:
+`chat_cmd` can also be a string, but list form is safer because `{input}` becomes one exact argument even when the generated prompt contains spaces or quotes.
 
 ```toml
-chat_cmd = "agent-cli chat --oneshot"
-```
+# String form is accepted for simple commands.
+chat_cmd = "agent-cli chat --oneshot {input}"
 
-If the prompt/input must appear somewhere other than the final argument, include the literal `{input}` placeholder. AgentBus replaces `{input}` with the generated task prompt. If no `{input}` placeholder is present, AgentBus appends the prompt as the last argument.
-
-```toml
-# Generic example where the prompt belongs after --prompt.
-chat_cmd = "agent-cli run --prompt {input} --json"
+# Prefer list form when the prompt belongs between flags.
+chat_cmd = ["agent-cli", "run", "--prompt", "{input}", "--json"]
 
 # Hermes example.
-chat_cmd = "hermes chat -q -Q {input}"
+chat_cmd = ["hermes", "chat", "-q", "-Q", "{input}"]
 ```
 
 `durable` is the NATS JetStream durable consumer name. It is not a password or a server address; it is the stable name NATS uses to remember this worker's delivery progress. If the worker restarts with the same durable name, NATS can continue from unacked / not-yet-delivered messages instead of treating it as a brand-new ephemeral consumer.
 
-Environment variables are supported for container deployments:
-
-```bash
-export AGENT_ID='code'
-export NATS_URL='tls://agent-code:agent_code_password@agentbus.example.com:7422'
-export AGENT_CHAT_CMD='agent-cli chat --oneshot {input}'
-export AGENTBUS_LOG_DIR='~/.agentbus/logs'
-export AGENTBUS_LOG_MAX_BYTES=104857600
-export AGENTBUS_LOG_BACKUP_COUNT=5
-export AGENTBUS_TASK_TIMEOUT_SECONDS=1800
-agentbus worker run
-```
-
-Precedence:
-
-```text
-CLI args > environment variables > TOML config > built-in defaults
-```
+AgentBus intentionally does not use environment variables for worker configuration. Put worker settings in TOML and pass `--config` when you do not want the default path.
 
 ## 5. Run the worker
 
@@ -359,20 +338,39 @@ deploy/launchd/com.agentbus.worker.plist
 
 Before installing a service, edit the template paths, user, working directory, and config path for the target machine.
 
-## 6. Publish a test task
+## 6. Configure a publisher
+
+Create a small config for the coordinator / publishing side:
+
+```toml
+[agent]
+id = "agent-main"
+
+[nats]
+url = "tls://agent-main:agent_main_password@agentbus.example.com:7422"
+default_result_subject = "agent.main.results"
+```
+
+Save it somewhere private, for example:
+
+```bash
+mkdir -p ~/.agentbus
+$EDITOR ~/.agentbus/main.toml
+chmod 600 ~/.agentbus/main.toml
+```
+
+## 7. Publish a test task
 
 Start a result subscriber in one terminal:
 
 ```bash
-export NATS_URL='tls://agent-main:agent_main_password@agentbus.example.com:7422'
-nats --server "$NATS_URL" sub agent.main.results
+nats --server 'tls://agent-main:agent_main_password@agentbus.example.com:7422' sub agent.main.results
 ```
 
 Publish a test task in another terminal:
 
 ```bash
-export NATS_URL='tls://agent-main:agent_main_password@agentbus.example.com:7422'
-agentbus task publish code ping '{"text":"hello"}'
+agentbus task publish --config ~/.agentbus/main.toml code ping '{"text":"hello"}'
 ```
 
 The `code` argument maps to this task subject:
@@ -464,7 +462,7 @@ max file size: 100MB
 backup count: 5
 ```
 
-The log directory is created automatically. Override it with `[log].dir`, `[log].max_bytes`, and `[log].backup_count` in TOML; `AGENTBUS_LOG_DIR`, `AGENTBUS_LOG_MAX_BYTES`, and `AGENTBUS_LOG_BACKUP_COUNT`; or `--log-dir`, `--log-max-bytes`, and `--log-backup-count`.
+The log directory is created automatically. Configure it with `[log].dir`, `[log].max_bytes`, and `[log].backup_count` in TOML.
 
 ## Ack behavior
 

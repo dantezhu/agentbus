@@ -34,7 +34,7 @@ def make_config():
     return WorkerConfig(
         agent_id="code",
         nats_url="nats://example:4222",
-        agent_chat_cmd=["agent-cli", "chat", "--oneshot"],
+        agent_chat_cmd=["agent-cli", "chat", "--oneshot", "{input}"],
         durable="agent-code",
         task_subject="agent.code.tasks",
         default_result_subject="agent.main.results",
@@ -151,7 +151,3 @@ def test_build_agent_command_replaces_input_placeholder_without_forcing_last_arg
         "hello world",
         "--json",
     )
-
-
-def test_build_agent_command_appends_input_when_no_placeholder_is_present():
-    assert build_agent_command("hello", make_config()) == ("agent-cli", "chat", "--oneshot", "hello")
