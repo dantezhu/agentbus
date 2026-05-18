@@ -24,7 +24,7 @@ Use this skill when an agent needs to:
 ```text
 public NATS JetStream server
   ↓
-agentbus-worker on each worker machine
+agentbus worker on each worker machine
   ↓
 configured agent command via agent_chat_cmd
   ↓
@@ -35,7 +35,7 @@ result message published back to NATS
 
 - `nats` CLI configured or installed;
 - access to a valid `NATS_URL`;
-- `agentbus-worker` installed on worker machines.
+- `agentbus` installed on worker machines.
 
 For public deployments, prefer a domain and TLS URL such as `tls://username:password@agentbus.example.com:7422`. The example port is `7422` to avoid the default NATS client port `4222`.
 

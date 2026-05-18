@@ -9,7 +9,7 @@ coordinator agent / human entry point
   ↓ publishes task
 public NATS JetStream server
   ↓ durable delivery
-agentbus-worker long-running process on each worker machine
+agentbus worker long-running process on each worker machine
   ↓ invokes configured agent command
 worker publishes result message and ack/nak/term the task
 ```
@@ -44,7 +44,7 @@ agentbus/
   config.py      TOML/env/CLI configuration
   messages.py    task/result schema and prompt builder
   worker.py      NATS JetStream worker runtime
-  cli.py         agentbus-worker entrypoint
+  cli.py         agentbus command-line entrypoint
 config/
   agentbus.worker.example.toml
   nats-server.conf
@@ -192,7 +192,16 @@ nats --server "$NATS_URL" stream info AGENT_RESULTS
 
 ## 3. Install the worker
 
-Use a standard `venv` + `pip` setup on each worker machine:
+From PyPI:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install agentbus
+```
+
+From a source checkout:
 
 ```bash
 python3 -m venv .venv
@@ -221,7 +230,7 @@ $EDITOR ~/.agentbus/config.toml
 chmod 600 ~/.agentbus/config.toml
 ```
 
-If `--config` is omitted, `agentbus-worker` checks:
+If `--config` is omitted, `agentbus worker` checks:
 
 ```text
 ./agentbus.toml
@@ -274,7 +283,7 @@ export AGENTBUS_LOG_DIR='~/.agentbus/logs'
 export AGENTBUS_LOG_MAX_BYTES=104857600
 export AGENTBUS_LOG_BACKUP_COUNT=5
 export AGENT_TASK_TIMEOUT_SECONDS=1800
-agentbus-worker
+agentbus worker
 ```
 
 Precedence:
@@ -288,7 +297,7 @@ CLI args > environment variables > TOML config > built-in defaults
 Foreground mode:
 
 ```bash
-agentbus-worker --config ~/.agentbus/config.toml
+agentbus worker --config ~/.agentbus/config.toml
 ```
 
 For long-running deployment, use one of the included templates:

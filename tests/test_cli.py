@@ -1,7 +1,17 @@
 import logging
 from logging.handlers import RotatingFileHandler
 
-from agentbus.cli import configure_logging
+from agentbus.cli import build_parser, configure_logging
+
+
+def test_parser_requires_worker_subcommand_for_worker_options():
+    parser = build_parser()
+
+    args = parser.parse_args(["worker", "--config", "~/.agentbus/config.toml", "--agent-id", "code"])
+
+    assert args.command == "worker"
+    assert args.config == "~/.agentbus/config.toml"
+    assert args.agent_id == "code"
 
 
 def test_configure_logging_creates_default_log_file_in_log_dir(tmp_path):

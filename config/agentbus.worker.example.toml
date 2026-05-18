@@ -1,10 +1,10 @@
-# Example worker config for agentbus-worker.
+# Example worker config for agentbus worker.
 # Copy to one of:
 #   ./agentbus.toml
 #   ~/.agentbus/config.toml
 #   /etc/agentbus/agentbus.toml
 # Or pass explicitly:
-#   agentbus-worker --config /path/to/config.toml
+#   agentbus worker --config /path/to/config.toml
 
 [worker]
 agent_id = "code"

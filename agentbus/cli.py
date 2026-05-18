@@ -10,8 +10,7 @@ from .config import build_config
 from .worker import AgentBusWorker
 
 
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="AgentBus worker for generic agent programs")
+def add_worker_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--config", help="Path to TOML config file")
     parser.add_argument("--agent-id", help="Agent id, e.g. code or doc. Overrides config file and AGENT_ID")
     parser.add_argument("--nats-url", help="NATS URL. Overrides config file and NATS_URL")
@@ -22,6 +21,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--log-dir", help="Log directory. Overrides config file and AGENTBUS_LOG_DIR")
     parser.add_argument("--log-max-bytes", type=int, help="Maximum bytes per worker log file before rotation")
     parser.add_argument("--log-backup-count", type=int, help="Number of rotated worker log files to keep")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="AgentBus command line interface")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    worker_parser = subparsers.add_parser("worker", help="Run an AgentBus worker")
+    add_worker_arguments(worker_parser)
     return parser
 
 

@@ -10,7 +10,8 @@
 
   <key>ProgramArguments</key>
   <array>
-    <string>/path/to/agentbus/.venv/bin/agentbus-worker</string>
+    <string>/path/to/agentbus/.venv/bin/agentbus</string>
+    <string>worker</string>
     <string>--config</string>
     <string>/Users/user/.agentbus/config.toml</string>
   </array>
