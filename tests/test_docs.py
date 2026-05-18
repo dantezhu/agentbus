@@ -78,3 +78,31 @@ def test_deploy_templates_use_env_virtualenv_path():
 
     assert "command=/path/to/agentbus/env/bin/agentbus worker run --config" in supervisor
     assert "autorestart=true" in supervisor
+
+
+def test_readme_layout_lists_primary_project_files():
+    readme = (ROOT / "README.md").read_text()
+
+    for path in (
+        "agentbus/__init__.py",
+        "agentbus/cli.py",
+        "agentbus/config.py",
+        "agentbus/messages.py",
+        "agentbus/publish.py",
+        "agentbus/result.py",
+        "agentbus/worker.py",
+        "config/agentbus.worker.example.toml",
+        "config/nats-server.conf",
+        "scripts/stream-setup.sh",
+        "deploy/launchd/com.agentbus.worker.plist",
+        "deploy/supervisor/agentbus-worker.conf",
+        "deploy/systemd/agentbus-worker.service",
+        "skills/agentbus/SKILL.md",
+        "tests/test_*.py",
+        "LICENSE",
+        "README.md",
+        "pyproject.toml",
+        "requirements.txt",
+        "requirements-dev.txt",
+    ):
+        assert path in readme
