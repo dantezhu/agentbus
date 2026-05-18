@@ -375,7 +375,7 @@ Only the task content is positional; agent routing and task metadata are named o
 Repeat `--to` to publish the same task content to multiple agents. AgentBus sends one task message per target.
 `--task-type` names the kind of work to run, while the final positional argument is the task content.
 `--reply-to` is an agent id, like `--from` and `--to`. It controls which agent result inbox receives the worker execution record; when omitted, it defaults to `--from`. AgentBus derives the result subject internally as `agent.<reply_to>.results`.
-`--payload-fmt` defaults to `text`, which stores the positional argument as `payload.fmt = "text"` and `payload.content` string. With `--payload-fmt json`, the positional argument is parsed as JSON and wrapped as `payload.fmt = "json"` plus `payload.content`, so JSON objects, arrays, strings, numbers, booleans, and null are all accepted. Workers should treat missing, empty, null, or `text` payload format as text.
+The positional content is stored as a plain string at `payload.content`. If you want to send JSON-like data through the CLI, pass it as text and let the receiving agent interpret it.
 
 Examples:
 
@@ -384,14 +384,12 @@ agentbus task publish \
   --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
   --to code \
   --task-type ping \
-  --payload-fmt text \
   'hello'
 
 agentbus task publish \
   --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
   --to code \
   --task-type batch \
-  --payload-fmt json \
   '[{"url":"https://example.com"}]'
 ```
 
@@ -438,11 +436,7 @@ agent.main.results
   "type": "task.request",
   "task_type": "review_pr",
   "payload": {
-    "fmt": "json",
-    "content": {
-      "repo": "org/repo",
-      "pr": 123
-    }
+    "content": "Review PR org/repo#123"
   }
 }
 ```
@@ -462,11 +456,7 @@ agent.main.results
     "type": "task.request",
     "task_type": "review_pr",
     "payload": {
-      "fmt": "json",
-      "content": {
-        "repo": "org/repo",
-        "pr": 123
-      }
+      "content": "Review PR org/repo#123"
     },
     "created_at": "2026-05-18T00:00:00+00:00"
   },

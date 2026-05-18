@@ -23,7 +23,6 @@ def add_task_publish_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--nats-url", required=True, help="NATS connection URL, e.g. tls://user:pass@host:7422")
     parser.add_argument("--to", action="append", required=True, dest="to_agents", help="Target agent id. Repeat to publish to multiple agents")
     parser.add_argument("--task-type", required=True, help="Task type, e.g. ping or review_pr")
-    parser.add_argument("--payload-fmt", choices=("text", "json"), default="text", help="Interpret content as plain text or JSON, then store as payload.fmt and payload.content")
     parser.add_argument("--from", dest="from_agent", default="main", help="Sender agent id")
     parser.add_argument("--reply-to", help="Agent that should receive task results. Defaults to --from")
 
@@ -87,7 +86,6 @@ async def run_task_publish(args: argparse.Namespace) -> None:
         target_agents=args.to_agents,
         task_type=args.task_type,
         content=args.content,
-        payload_fmt=args.payload_fmt,
         from_agent=args.from_agent,
         reply_to=args.reply_to,
     )

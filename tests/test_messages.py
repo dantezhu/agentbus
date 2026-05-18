@@ -42,7 +42,7 @@ def test_build_result_message_embeds_task_context_without_duplicate_routing_fiel
         to="agent-code",
         type="task.request",
         task_type="ping",
-        payload={"fmt": "text", "content": "hello"},
+        payload={"content": "hello"},
         reply_to="agent-coordinator",
         created_at="2026-05-18T00:00:00+00:00",
     )
@@ -58,7 +58,7 @@ def test_build_result_message_embeds_task_context_without_duplicate_routing_fiel
         "to": "agent-code",
         "type": "task.request",
         "task_type": "ping",
-        "payload": {"fmt": "text", "content": "hello"},
+        "payload": {"content": "hello"},
         "reply_to": "agent-coordinator",
         "created_at": "2026-05-18T00:00:00+00:00",
     }

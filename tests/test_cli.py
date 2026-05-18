@@ -44,8 +44,6 @@ def test_parser_accepts_task_publish_subcommand_with_named_agent_args_and_positi
         "main",
         "--reply-to",
         "coordinator",
-        "--payload-fmt",
-        "json",
     ])
 
     assert args.command == "task"
@@ -56,7 +54,7 @@ def test_parser_accepts_task_publish_subcommand_with_named_agent_args_and_positi
     assert args.nats_url == "tls://agent-main:secret@agentbus.example.com:7422"
     assert args.from_agent == "main"
     assert args.reply_to == "coordinator"
-    assert args.payload_fmt == "json"
+    assert not hasattr(args, "payload_fmt")
     assert not hasattr(args, "task_fmt")
     assert not hasattr(args, "config")
 
@@ -93,6 +91,7 @@ def test_parser_rejects_removed_task_publish_options():
         "--reply-to-agent",
         "--risk-level",
         "--max-hops",
+        "--payload-fmt",
     ]
     for option in removed_options:
         with pytest.raises(SystemExit):

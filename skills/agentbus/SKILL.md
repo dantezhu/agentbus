@@ -62,16 +62,15 @@ agentbus task publish \
 ```
 
 Repeat `--to` to send the same content to multiple agents. AgentBus publishes one task message per target agent. `--reply-to` is an agent id, like `--from` and `--to`; it controls which agent result inbox receives the worker execution record. When omitted, it defaults to `--from`, and AgentBus derives the result subject internally as `agent.<reply_to>.results`.
-`--payload-fmt` defaults to `text`, which stores the positional argument at `payload.content` with `payload.fmt = "text"`. Use `--payload-fmt json` to parse the positional argument as JSON and wrap the parsed value at `payload.content` with `payload.fmt = "json"`; arrays and scalar JSON values are allowed. Treat missing, empty, null, or `text` payload format as text.
+The positional content is stored as a plain string at `payload.content`. If you need JSON-like content, pass it as text and let the receiving agent interpret it.
 
-JSON example:
+JSON-like text example:
 
 ```bash
 agentbus task publish \
   --nats-url 'tls://username:password@agentbus.example.com:7422' \
   --to code \
   --task-type batch \
-  --payload-fmt json \
   '[{"url":"https://example.com"}]'
 ```
 
@@ -85,7 +84,7 @@ nats --server 'tls://username:password@agentbus.example.com:7422' pub agent.code
   "reply_to":"agent-main",
   "type":"task.request",
   "task_type":"ping",
-  "payload":{"fmt":"text","content":"hello"}
+  "payload":{"content":"hello"}
 }'
 ```
 
