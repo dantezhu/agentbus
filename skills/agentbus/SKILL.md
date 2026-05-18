@@ -53,7 +53,9 @@ agent.<agent_id>.heartbeat
 ```bash
 agentbus task publish \
   --nats-url 'tls://username:password@agentbus.example.com:7422' \
-  code ping '{"text":"hello"}'
+  --to-agent code \
+  --task ping \
+  'hello'
 ```
 
 Equivalent direct publish:
@@ -65,7 +67,7 @@ nats --server 'tls://username:password@agentbus.example.com:7422' pub agent.code
   "to":"agent-code",
   "type":"task.request",
   "task":"ping",
-  "payload":{"text":"hello"},
+  "payload":{"content":"hello"},
   "reply_to":"agent.main.results",
   "risk_level":"normal",
   "max_hops":3

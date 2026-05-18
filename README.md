@@ -351,12 +351,15 @@ Publish a test task in another terminal:
 ```bash
 agentbus task publish \
   --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
-  code ping '{"text":"hello"}'
+  --to-agent code \
+  --task ping \
+  'hello'
 ```
 
 Publishing is intentionally configured with CLI arguments instead of a TOML file. Unlike the worker, it is a short one-shot command with only a few options.
+Only the task content is positional; routing and task metadata are named options so the command remains readable.
 
-The `code` argument maps to this task subject:
+The `--to-agent code` option maps to this task subject:
 
 ```text
 agent.code.tasks

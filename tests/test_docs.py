@@ -54,6 +54,9 @@ def test_docs_use_direct_cli_args_for_publish_not_config_files():
     for text in (readme, skill):
         assert "agentbus task publish --config" not in text
         assert "--nats-url" in text
+        assert "--to-agent" in text
+        assert "--task" in text
+        assert "code ping" not in text
 
 
 def test_deploy_templates_use_env_virtualenv_path():

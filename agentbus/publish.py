@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import uuid
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -23,14 +22,13 @@ def build_task_message(
     from_agent: str,
     target_agent: str,
     task_name: str,
-    payload_json: str,
+    content: str,
     reply_to: str,
     risk_level: str,
     max_hops: int,
 ) -> dict[str, Any]:
-    payload = json.loads(payload_json)
-    if not isinstance(payload, dict):
-        raise ValueError("payload must be a JSON object")
+    if not content:
+        raise ValueError("content is required")
     target = normalize_target_agent(target_agent)
     return {
         "id": task_id,
@@ -38,7 +36,7 @@ def build_task_message(
         "to": f"agent-{target}",
         "type": "task.request",
         "task": task_name,
-        "payload": payload,
+        "payload": {"content": content},
         "reply_to": reply_to,
         "risk_level": risk_level,
         "max_hops": max_hops,
@@ -61,7 +59,7 @@ async def publish_task(
     nats_url: str,
     target_agent: str,
     task_name: str,
-    payload_json: str,
+    content: str,
     from_agent: str,
     reply_to: str,
     task_id: str | None,
@@ -71,14 +69,14 @@ async def publish_task(
     publisher: PublisherFn = nats_publisher,
 ) -> dict[str, Any]:
     if not nats_url:
-        raise ValueError("nats_url is required in the config file")
+        raise ValueError("nats_url is required")
     target = normalize_target_agent(target_agent)
     message = build_task_message(
         task_id=task_id or f"task-{uuid.uuid4()}",
         from_agent=from_agent,
         target_agent=target,
         task_name=task_name,
-        payload_json=payload_json,
+        content=content,
         reply_to=reply_to,
         risk_level=risk_level,
         max_hops=max_hops,

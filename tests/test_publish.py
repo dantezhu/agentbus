@@ -12,7 +12,7 @@ def test_build_task_message_uses_explicit_arguments_only():
         from_agent="agent-main",
         target_agent="code",
         task_name="ping",
-        payload_json='{"text":"hello"}',
+        content="hello",
         reply_to="agent.main.results",
         risk_level="normal",
         max_hops=3,
@@ -24,21 +24,21 @@ def test_build_task_message_uses_explicit_arguments_only():
         "to": "agent-code",
         "type": "task.request",
         "task": "ping",
-        "payload": {"text": "hello"},
+        "payload": {"content": "hello"},
         "reply_to": "agent.main.results",
         "risk_level": "normal",
         "max_hops": 3,
     }
 
 
-def test_build_task_message_rejects_non_object_payload():
-    with pytest.raises(ValueError, match="payload must be a JSON object"):
+def test_build_task_message_rejects_empty_content():
+    with pytest.raises(ValueError, match="content is required"):
         build_task_message(
             task_id="task-1",
             from_agent="agent-main",
             target_agent="code",
             task_name="ping",
-            payload_json='["not", "object"]',
+            content="",
             reply_to="agent.main.results",
             risk_level="normal",
             max_hops=3,
@@ -55,7 +55,7 @@ def test_publish_task_publishes_to_derived_subject_with_explicit_nats_url():
         nats_url="tls://agent-main:secret@agentbus.example.com:7422",
         target_agent="code",
         task_name="ping",
-        payload_json='{"text":"hello"}',
+        content="hello",
         from_agent="agent-main",
         reply_to="agent.main.results",
         task_id="task-1",
