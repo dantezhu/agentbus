@@ -35,6 +35,8 @@ def test_parser_accepts_task_publish_subcommand_with_named_routing_args_and_posi
         "tls://agent-main:secret@agentbus.example.com:7422",
         "--to-agent",
         "code",
+        "--to-agent",
+        "doc",
         "--task",
         "ping",
         "hello",
@@ -46,7 +48,7 @@ def test_parser_accepts_task_publish_subcommand_with_named_routing_args_and_posi
 
     assert args.command == "task"
     assert args.task_command == "publish"
-    assert args.to_agent == "code"
+    assert args.to_agent == ["code", "doc"]
     assert args.task == "ping"
     assert args.content == "hello"
     assert args.nats_url == "tls://agent-main:secret@agentbus.example.com:7422"

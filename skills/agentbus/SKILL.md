@@ -54,9 +54,12 @@ agent.<agent_id>.heartbeat
 agentbus task publish \
   --nats-url 'tls://username:password@agentbus.example.com:7422' \
   --to-agent code \
+  --to-agent doc \
   --task ping \
   'hello'
 ```
+
+Repeat `--to-agent` to send the same content to multiple agents. AgentBus publishes one task message per target agent.
 
 Equivalent direct publish:
 

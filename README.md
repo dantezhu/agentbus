@@ -352,20 +352,23 @@ Publish a test task in another terminal:
 agentbus task publish \
   --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
   --to-agent code \
+  --to-agent doc \
   --task ping \
   'hello'
 ```
 
 Publishing is intentionally configured with CLI arguments instead of a TOML file. Unlike the worker, it is a short one-shot command with only a few options.
 Only the task content is positional; routing and task metadata are named options so the command remains readable.
+Repeat `--to-agent` to publish the same task content to multiple agents. AgentBus sends one task message per target.
 
-The `--to-agent code` option maps to this task subject:
+The `--to-agent code` and `--to-agent doc` options map to these task subjects:
 
 ```text
 agent.code.tasks
+agent.doc.tasks
 ```
 
-If the `code` worker is running, the subscriber should receive a `task.result` message on:
+If the target workers are running, the subscriber should receive `task.result` messages on:
 
 ```text
 agent.main.results

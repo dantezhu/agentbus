@@ -9,7 +9,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from .config import build_config
-from .publish import publish_task
+from .publish import publish_tasks
 from .worker import AgentBusWorker
 
 
@@ -20,7 +20,7 @@ def add_worker_arguments(parser: argparse.ArgumentParser) -> None:
 def add_task_publish_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("content", help="Task content. Stored as payload.content")
     parser.add_argument("--nats-url", required=True, help="NATS connection URL, e.g. tls://user:pass@host:7422")
-    parser.add_argument("--to-agent", required=True, help="Target agent id, e.g. code or agent-code")
+    parser.add_argument("--to-agent", action="append", required=True, help="Target agent id. Repeat to publish to multiple agents")
     parser.add_argument("--task", required=True, help="Task name, e.g. ping or review_pr")
     parser.add_argument("--from-agent", default="agent-main", help="Sender agent id")
     parser.add_argument("--reply-to", default="agent.main.results", help="Result subject")
@@ -72,9 +72,9 @@ def configure_logging(
 
 
 async def run_task_publish(args: argparse.Namespace) -> None:
-    message = await publish_task(
+    messages = await publish_tasks(
         nats_url=args.nats_url,
-        target_agent=args.to_agent,
+        target_agents=args.to_agent,
         task_name=args.task,
         content=args.content,
         from_agent=args.from_agent,
@@ -84,7 +84,8 @@ async def run_task_publish(args: argparse.Namespace) -> None:
         max_hops=args.max_hops,
         subject=args.subject,
     )
-    print(json.dumps(message, ensure_ascii=False, separators=(",", ":")))
+    output = messages[0] if len(messages) == 1 else messages
+    print(json.dumps(output, ensure_ascii=False, separators=(",", ":")))
 
 
 def run_worker(args: argparse.Namespace) -> None:

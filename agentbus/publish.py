@@ -84,3 +84,42 @@ async def publish_task(
     publish_subject = subject or f"agent.{target}.tasks"
     await publisher(nats_url, publish_subject, dump_json(message))
     return message
+
+async def publish_tasks(
+    *,
+    nats_url: str,
+    target_agents: list[str],
+    task_name: str,
+    content: str,
+    from_agent: str,
+    reply_to: str,
+    task_id: str | None,
+    risk_level: str,
+    max_hops: int,
+    subject: str | None,
+    publisher: PublisherFn = nats_publisher,
+) -> list[dict[str, Any]]:
+    targets = [normalize_target_agent(target) for target in target_agents]
+    if not targets:
+        raise ValueError("at least one target agent is required")
+    if subject and len(targets) > 1:
+        raise ValueError("subject override cannot be used with multiple target agents")
+    if task_id and len(targets) > 1:
+        raise ValueError("task_id cannot be used with multiple target agents")
+
+    messages = []
+    for target in targets:
+        messages.append(await publish_task(
+            nats_url=nats_url,
+            target_agent=target,
+            task_name=task_name,
+            content=content,
+            from_agent=from_agent,
+            reply_to=reply_to,
+            task_id=task_id,
+            risk_level=risk_level,
+            max_hops=max_hops,
+            subject=subject,
+            publisher=publisher,
+        ))
+    return messages
