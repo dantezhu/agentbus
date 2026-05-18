@@ -18,7 +18,7 @@ worker publishes result message and ack/nak/term the task
 
 - No bot-to-bot chat dependency.
 - No direct inbound access needed for worker machines.
-- Generic agent command integration through `agent_chat_cmd`.
+- Generic agent command integration through TOML `chat_cmd` / env `AGENT_CHAT_CMD`.
 - Worker configuration via TOML file, with env/CLI overrides.
 - NATS subjects keep routing explicit and permissionable.
 - Durable task delivery through JetStream, not plain fire-and-forget pub/sub.
@@ -35,7 +35,7 @@ Worker side:
 
 - Python >= 3.11.
 - Network access from the worker machine to the NATS server.
-- A one-shot agent command configured as `agent_chat_cmd`.
+- A one-shot agent command configured as TOML `chat_cmd`.
 
 ## Layout
 
@@ -241,37 +241,51 @@ If `--config` is omitted, `agentbus worker run` checks:
 Required worker fields:
 
 ```toml
-[worker]
-agent_id = "code"
-nats_url = "tls://agent-code:agent_code_password@agentbus.example.com:7422"
-agent_chat_cmd = ["agent-cli", "chat", "--oneshot"]
-log_dir = "~/.agentbus/logs"
-log_max_bytes = 104857600
-log_backup_count = 5
+[agent]
+id = "code"
+chat_cmd = ["agent-cli", "chat", "--oneshot"]
+
+[nats]
+url = "tls://agent-code:agent_code_password@agentbus.example.com:7422"
 ```
 
 A fuller example:
 
 ```toml
-[worker]
-agent_id = "code"
-nats_url = "tls://agent-code:agent_code_password@agentbus.example.com:7422"
+[agent]
+id = "code"
+chat_cmd = ["agent-cli", "chat", "--oneshot"]
+timeout_seconds = 1800
+extra_instruction = ""
+
+[nats]
+url = "tls://agent-code:agent_code_password@agentbus.example.com:7422"
 stream = "AGENT_TASKS"
-durable = "agent-code"
 task_subject = "agent.code.tasks"
 default_result_subject = "agent.main.results"
-agent_chat_cmd = ["agent-cli", "chat", "--oneshot"]
-timeout_seconds = 1800
-log_dir = "~/.agentbus/logs"
-log_max_bytes = 104857600
-log_backup_count = 5
+# Durable consumer name. Keep stable per worker identity so NATS remembers ack/progress.
+durable = "agent-code"
+
+[log]
+dir = "~/.agentbus/logs"
+max_bytes = 104857600
+backup_count = 5
+
+[limits]
+max_payload_bytes = 1048576
+
+[connection]
+reconnect_time_wait_seconds = 2
+max_reconnect_attempts = -1
 ```
 
-`agent_chat_cmd` can also be a string:
+`chat_cmd` can also be a string:
 
 ```toml
-agent_chat_cmd = "agent-cli chat --oneshot"
+chat_cmd = "agent-cli chat --oneshot"
 ```
+
+`durable` is the NATS JetStream durable consumer name. It is not a password or a server address; it is the stable name NATS uses to remember this worker's delivery progress. If the worker restarts with the same durable name, NATS can continue from unacked / not-yet-delivered messages instead of treating it as a brand-new ephemeral consumer.
 
 Environment variables are supported for container deployments:
 
@@ -414,7 +428,7 @@ max file size: 100MB
 backup count: 5
 ```
 
-The log directory is created automatically. Override it with `log_dir`, `log_max_bytes`, and `log_backup_count` in TOML; `AGENTBUS_LOG_DIR`, `AGENTBUS_LOG_MAX_BYTES`, and `AGENTBUS_LOG_BACKUP_COUNT`; or `--log-dir`, `--log-max-bytes`, and `--log-backup-count`.
+The log directory is created automatically. Override it with `[log].dir`, `[log].max_bytes`, and `[log].backup_count` in TOML; `AGENTBUS_LOG_DIR`, `AGENTBUS_LOG_MAX_BYTES`, and `AGENTBUS_LOG_BACKUP_COUNT`; or `--log-dir`, `--log-max-bytes`, and `--log-backup-count`.
 
 ## Ack behavior
 

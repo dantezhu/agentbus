@@ -6,23 +6,30 @@
 # Or pass explicitly:
 #   agentbus worker run --config /path/to/config.toml
 
-[worker]
-agent_id = "code"
-nats_url = "tls://username:password@agentbus.example.com:7422"
-stream = "AGENT_TASKS"
-durable = "agent-code"
-task_subject = "agent.code.tasks"
-default_result_subject = "agent.main.results"
-
+[agent]
+id = "code"
 # Required. Either string or list is accepted.
-agent_chat_cmd = ["agent-cli", "chat", "--oneshot"]
-# agent_chat_cmd = "agent-cli chat --oneshot"
-
+chat_cmd = ["agent-cli", "chat", "--oneshot"]
+# chat_cmd = "agent-cli chat --oneshot"
 timeout_seconds = 1800
 extra_instruction = ""
-log_dir = "~/.agentbus/logs"
-log_max_bytes = 104857600
-log_backup_count = 5
+
+[nats]
+url = "tls://username:password@agentbus.example.com:7422"
+stream = "AGENT_TASKS"
+task_subject = "agent.code.tasks"
+default_result_subject = "agent.main.results"
+# Durable consumer name. Keep stable per worker identity so NATS remembers ack/progress.
+durable = "agent-code"
+
+[log]
+dir = "~/.agentbus/logs"
+max_bytes = 104857600
+backup_count = 5
+
+[limits]
 max_payload_bytes = 1048576
+
+[connection]
 reconnect_time_wait_seconds = 2
 max_reconnect_attempts = -1

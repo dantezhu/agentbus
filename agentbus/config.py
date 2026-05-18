@@ -57,14 +57,66 @@ def load_config_file(path: str | os.PathLike[str]) -> WorkerConfig:
     return config_from_mapping(load_config_file_data(path))
 
 
+SECTION_FIELD_MAP = {
+    "agent": {
+        "id": "agent_id",
+        "chat_cmd": "agent_chat_cmd",
+        "timeout_seconds": "timeout_seconds",
+        "extra_instruction": "extra_instruction",
+    },
+    "nats": {
+        "url": "nats_url",
+        "stream": "stream",
+        "durable": "durable",
+        "task_subject": "task_subject",
+        "default_result_subject": "default_result_subject",
+    },
+    "log": {
+        "dir": "log_dir",
+        "max_bytes": "log_max_bytes",
+        "backup_count": "log_backup_count",
+    },
+    "limits": {
+        "max_payload_bytes": "max_payload_bytes",
+    },
+    "connection": {
+        "reconnect_time_wait_seconds": "reconnect_time_wait_seconds",
+        "max_reconnect_attempts": "max_reconnect_attempts",
+    },
+}
+
+
+def flatten_grouped_config(data: dict[str, Any]) -> dict[str, Any]:
+    flattened: dict[str, Any] = {}
+    unknown: list[str] = []
+    for section, values in data.items():
+        if section in SECTION_FIELD_MAP:
+            if not isinstance(values, dict):
+                raise ValueError(f"config section [{section}] must be a table")
+            allowed = SECTION_FIELD_MAP[section]
+            for key, value in values.items():
+                target = allowed.get(key)
+                if target is None:
+                    unknown.append(key)
+                else:
+                    flattened[target] = value
+        else:
+            flattened[section] = values
+    if unknown:
+        raise ValueError(f"unknown config fields: {', '.join(sorted(unknown))}")
+    return flattened
+
+
 def load_config_file_data(path: str | os.PathLike[str]) -> dict[str, Any]:
     config_path = Path(path).expanduser()
     with config_path.open("rb") as fh:
         raw = tomllib.load(fh)
-    worker = raw.get("worker", raw)
-    if not isinstance(worker, dict):
-        raise ValueError("config file must contain a [worker] table or top-level mapping")
-    return dict(worker)
+    if "worker" in raw:
+        worker = raw["worker"]
+        if not isinstance(worker, dict):
+            raise ValueError("config file [worker] must be a table")
+        return dict(worker)
+    return flatten_grouped_config(dict(raw))
 
 
 def find_default_config_file() -> Path | None:

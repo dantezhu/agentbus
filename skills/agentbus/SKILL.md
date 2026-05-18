@@ -26,7 +26,7 @@ public NATS JetStream server
   ↓
 agentbus worker run on each worker machine
   ↓
-configured agent command via agent_chat_cmd
+configured agent command via TOML chat_cmd / env AGENT_CHAT_CMD
   ↓
 result message published back to NATS
 ```
@@ -86,21 +86,26 @@ Default user config path:
 ```
 
 ```toml
-[worker]
-agent_id = "code"
-nats_url = "tls://username:password@agentbus.example.com:7422"
-agent_chat_cmd = ["agent-cli", "chat", "--oneshot"]
+[agent]
+id = "code"
+chat_cmd = ["agent-cli", "chat", "--oneshot"]
+timeout_seconds = 1800
+
+[nats]
+url = "tls://username:password@agentbus.example.com:7422"
 stream = "AGENT_TASKS"
-durable = "agent-code"
 task_subject = "agent.code.tasks"
 default_result_subject = "agent.main.results"
-timeout_seconds = 1800
-log_dir = "~/.agentbus/logs"
-log_max_bytes = 104857600
-log_backup_count = 5
+# Stable JetStream durable consumer name for this worker identity.
+durable = "agent-code"
+
+[log]
+dir = "~/.agentbus/logs"
+max_bytes = 104857600
+backup_count = 5
 ```
 
-`agent_chat_cmd` is required and should point to the one-shot chat/task command of the target agent program.
+`chat_cmd` is required and should point to the one-shot chat/task command of the target agent program. `durable` is the stable NATS JetStream consumer name used to remember worker delivery progress across restarts.
 
 ## Safety rule
 
@@ -111,5 +116,5 @@ When a task may cause irreversible side effects, external sends, production chan
 1. Confirm the task subject matches the worker's `agent_id` / `task_subject`.
 2. Confirm the worker can connect to `NATS_URL`.
 3. Confirm NATS user permissions allow subscribe on `agent.<id>.tasks` and publish on result subjects.
-4. Confirm `agent_chat_cmd` works locally before starting the worker.
+4. Confirm TOML `chat_cmd` / env `AGENT_CHAT_CMD` works locally before starting the worker.
 5. Check worker logs at `~/.agentbus/logs/agentbus-worker.log` for invalid JSON, command timeout, or publish failures.
