@@ -25,7 +25,7 @@ def test_parser_rejects_worker_cli_overrides():
         parser.parse_args(["worker", "run", "--config", "~/.agentbus/config.toml", "--agent-id", "code"])
 
 
-def test_parser_accepts_task_publish_subcommand_with_named_routing_args_and_positional_content():
+def test_parser_accepts_task_publish_subcommand_with_named_agent_args_and_positional_content():
     parser = build_parser()
 
     args = parser.parse_args([
@@ -37,23 +37,23 @@ def test_parser_accepts_task_publish_subcommand_with_named_routing_args_and_posi
         "code",
         "--to-agent",
         "doc",
-        "--task",
+        "--task-type",
         "ping",
         "hello",
         "--from-agent",
-        "agent-main",
-        "--reply-to",
-        "agent.main.results",
+        "main",
+        "--reply-to-agent",
+        "coordinator",
     ])
 
     assert args.command == "task"
     assert args.task_command == "publish"
     assert args.to_agent == ["code", "doc"]
-    assert args.task == "ping"
+    assert args.task_type == "ping"
     assert args.content == "hello"
     assert args.nats_url == "tls://agent-main:secret@agentbus.example.com:7422"
-    assert args.from_agent == "agent-main"
-    assert args.reply_to == "agent.main.results"
+    assert args.from_agent == "main"
+    assert args.reply_to_agent == "coordinator"
     assert not hasattr(args, "config")
 
 
@@ -61,10 +61,10 @@ def test_parser_rejects_task_publish_without_nats_url():
     parser = build_parser()
 
     with pytest.raises(SystemExit):
-        parser.parse_args(["task", "publish", "--to-agent", "code", "--task", "ping", "hello"])
+        parser.parse_args(["task", "publish", "--to-agent", "code", "--task-type", "ping", "hello"])
 
 
-def test_parser_rejects_task_publish_without_named_target_or_task():
+def test_parser_rejects_task_publish_without_named_target_or_task_type():
     parser = build_parser()
 
     with pytest.raises(SystemExit):
@@ -79,11 +79,39 @@ def test_parser_rejects_task_publish_without_named_target_or_task():
         ])
 
 
+def test_parser_rejects_removed_task_publish_options():
+    parser = build_parser()
+
+    removed_options = [
+        "--task",
+        "--subject",
+        "--task-id",
+        "--reply-to",
+        "--risk-level",
+        "--max-hops",
+    ]
+    for option in removed_options:
+        with pytest.raises(SystemExit):
+            parser.parse_args([
+                "task",
+                "publish",
+                "--nats-url",
+                "tls://agent-main:secret@agentbus.example.com:7422",
+                "--to-agent",
+                "code",
+                "--task-type",
+                "ping",
+                option,
+                "value",
+                "hello",
+            ])
+
+
 def test_parser_rejects_task_publish_config_file():
     parser = build_parser()
 
     with pytest.raises(SystemExit):
-        parser.parse_args(["task", "publish", "--config", "~/.agentbus/main.toml", "--to-agent", "code", "--task", "ping", "hello"])
+        parser.parse_args(["task", "publish", "--config", "~/.agentbus/main.toml", "--to-agent", "code", "--task-type", "ping", "hello"])
 
 
 def test_configure_logging_creates_default_log_file_in_log_dir(tmp_path):

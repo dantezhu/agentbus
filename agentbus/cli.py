@@ -21,27 +21,23 @@ def add_task_publish_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("content", help="Task content. Stored as payload.content")
     parser.add_argument("--nats-url", required=True, help="NATS connection URL, e.g. tls://user:pass@host:7422")
     parser.add_argument("--to-agent", action="append", required=True, help="Target agent id. Repeat to publish to multiple agents")
-    parser.add_argument("--task", required=True, help="Task name, e.g. ping or review_pr")
-    parser.add_argument("--from-agent", default="agent-main", help="Sender agent id")
-    parser.add_argument("--reply-to", default="agent.main.results", help="Result subject")
-    parser.add_argument("--task-id", help="Explicit task id. Defaults to task-<uuid>")
-    parser.add_argument("--risk-level", default="normal", help="Task risk level")
-    parser.add_argument("--max-hops", type=int, default=3, help="Maximum delegation hops")
-    parser.add_argument("--subject", help="Override publish subject. Defaults to agent.<target>.tasks")
+    parser.add_argument("--task-type", required=True, help="Task type, e.g. ping or review_pr")
+    parser.add_argument("--from-agent", default="main", help="Sender agent id")
+    parser.add_argument("--reply-to-agent", help="Agent that should receive task results. Defaults to --from-agent")
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="AgentBus command line interface")
+    parser = argparse.ArgumentParser(description="AgentBus command line interface", allow_abbrev=False)
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    worker_parser = subparsers.add_parser("worker", help="Worker commands")
+    worker_parser = subparsers.add_parser("worker", help="Worker commands", allow_abbrev=False)
     worker_subparsers = worker_parser.add_subparsers(dest="worker_command", required=True)
-    worker_run_parser = worker_subparsers.add_parser("run", help="Run an AgentBus worker")
+    worker_run_parser = worker_subparsers.add_parser("run", help="Run an AgentBus worker", allow_abbrev=False)
     add_worker_arguments(worker_run_parser)
 
-    task_parser = subparsers.add_parser("task", help="Task commands")
+    task_parser = subparsers.add_parser("task", help="Task commands", allow_abbrev=False)
     task_subparsers = task_parser.add_subparsers(dest="task_command", required=True)
-    task_publish_parser = task_subparsers.add_parser("publish", help="Publish an AgentBus task")
+    task_publish_parser = task_subparsers.add_parser("publish", help="Publish an AgentBus task", allow_abbrev=False)
     add_task_publish_arguments(task_publish_parser)
     return parser
 
@@ -75,14 +71,10 @@ async def run_task_publish(args: argparse.Namespace) -> None:
     messages = await publish_tasks(
         nats_url=args.nats_url,
         target_agents=args.to_agent,
-        task_name=args.task,
+        task_type=args.task_type,
         content=args.content,
         from_agent=args.from_agent,
-        reply_to=args.reply_to,
-        task_id=args.task_id,
-        risk_level=args.risk_level,
-        max_hops=args.max_hops,
-        subject=args.subject,
+        reply_to_agent=args.reply_to_agent,
     )
     output = messages[0] if len(messages) == 1 else messages
     print(json.dumps(output, ensure_ascii=False, separators=(",", ":")))

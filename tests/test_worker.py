@@ -47,8 +47,9 @@ def test_handle_message_success_publishes_result_and_acks():
         "from": "agent-main",
         "to": "agent-code",
         "type": "task.request",
-        "task": "ping",
+        "task_type": "ping",
         "payload": {"x": 1},
+        "reply_to_agent": "agent-main",
         "reply_to": "agent.main.results",
     }
     msg = DummyMsg(payload)
@@ -79,7 +80,7 @@ def test_handle_message_failed_agent_run_publishes_failed_result_and_acks():
         "from": "agent-main",
         "to": "agent-code",
         "type": "task.request",
-        "task": "fail",
+        "task_type": "fail",
         "payload": {},
     }
     msg = DummyMsg(payload)

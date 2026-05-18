@@ -7,7 +7,7 @@ import uuid
 from typing import Any
 
 
-REQUIRED_TASK_FIELDS = ("id", "from", "to", "type", "task")
+REQUIRED_TASK_FIELDS = ("id", "from", "to", "type", "task_type")
 
 
 @dataclass(frozen=True)
@@ -16,12 +16,11 @@ class TaskMessage:
     from_agent: str
     to: str
     type: str
-    task: str
+    task_type: str
     payload: dict[str, Any] = field(default_factory=dict)
+    reply_to_agent: str | None = None
     reply_to: str | None = None
     created_at: str | None = None
-    risk_level: str = "normal"
-    max_hops: int = 3
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "TaskMessage":
@@ -36,12 +35,11 @@ class TaskMessage:
             from_agent=str(data["from"]),
             to=str(data["to"]),
             type=str(data["type"]),
-            task=str(data["task"]),
+            task_type=str(data["task_type"]),
             payload=payload,
+            reply_to_agent=data.get("reply_to_agent"),
             reply_to=data.get("reply_to"),
             created_at=data.get("created_at"),
-            risk_level=str(data.get("risk_level", "normal")),
-            max_hops=int(data.get("max_hops", 3)),
         )
 
     def as_dict(self) -> dict[str, Any]:
@@ -49,13 +47,12 @@ class TaskMessage:
             "id": self.id,
             "from": self.from_agent,
             "to": self.to,
+            "reply_to_agent": self.reply_to_agent,
             "type": self.type,
-            "task": self.task,
+            "task_type": self.task_type,
             "payload": self.payload,
             "reply_to": self.reply_to,
             "created_at": self.created_at,
-            "risk_level": self.risk_level,
-            "max_hops": self.max_hops,
         }
 
 
@@ -81,9 +78,8 @@ def build_agent_prompt(task: TaskMessage, agent_id: str, extra_instruction: str 
     parts = [
         f"You are {agent_id}. You received an asynchronous AgentBus task from {task.from_agent}.",
         "",
-        f"Task name: {task.task}",
+        f"Task type: {task.task_type}",
         f"Message ID: {task.id}",
-        f"Risk level: {task.risk_level}",
         "",
         "Full task JSON:",
         payload_json,
@@ -108,7 +104,7 @@ def build_result_message(
         "id": str(uuid.uuid4()),
         "request_id": task.id,
         "from": agent_id,
-        "to": task.from_agent,
+        "to": task.reply_to_agent or task.from_agent,
         "type": "task.result",
         "status": status,
         "reply_to": task.reply_to,

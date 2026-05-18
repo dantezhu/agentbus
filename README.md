@@ -353,13 +353,17 @@ agentbus task publish \
   --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
   --to-agent code \
   --to-agent doc \
-  --task ping \
+  --from-agent main \
+  --reply-to-agent main \
+  --task-type ping \
   'hello'
 ```
 
 Publishing is intentionally configured with CLI arguments instead of a TOML file. Unlike the worker, it is a short one-shot command with only a few options.
-Only the task content is positional; routing and task metadata are named options so the command remains readable.
+Only the task content is positional; agent routing and task metadata are named options so the command remains readable.
 Repeat `--to-agent` to publish the same task content to multiple agents. AgentBus sends one task message per target.
+`--task-type` names the kind of work to run, while the final positional argument is the task content.
+`--reply-to-agent` controls which agent result inbox receives the result; when omitted, it defaults to `--from-agent`.
 
 The `--to-agent code` and `--to-agent doc` options map to these task subjects:
 
@@ -400,15 +404,14 @@ agent.main.results
   "id": "task-20260518-0001",
   "from": "agent-main",
   "to": "agent-code",
+  "reply_to_agent": "agent-main",
   "type": "task.request",
-  "task": "review_pr",
+  "task_type": "review_pr",
   "payload": {
     "repo": "org/repo",
     "pr": 123
   },
-  "reply_to": "agent.main.results",
-  "risk_level": "normal",
-  "max_hops": 3
+  "reply_to": "agent.main.results"
 }
 ```
 

@@ -55,11 +55,13 @@ agentbus task publish \
   --nats-url 'tls://username:password@agentbus.example.com:7422' \
   --to-agent code \
   --to-agent doc \
-  --task ping \
+  --from-agent main \
+  --reply-to-agent main \
+  --task-type ping \
   'hello'
 ```
 
-Repeat `--to-agent` to send the same content to multiple agents. AgentBus publishes one task message per target agent.
+Repeat `--to-agent` to send the same content to multiple agents. AgentBus publishes one task message per target agent. `--reply-to-agent` controls which agent result inbox receives the result; when omitted, it defaults to `--from-agent`.
 
 Equivalent direct publish:
 
@@ -68,12 +70,11 @@ nats --server 'tls://username:password@agentbus.example.com:7422' pub agent.code
   "id":"task-001",
   "from":"agent-main",
   "to":"agent-code",
+  "reply_to_agent":"agent-main",
   "type":"task.request",
-  "task":"ping",
+  "task_type":"ping",
   "payload":{"content":"hello"},
-  "reply_to":"agent.main.results",
-  "risk_level":"normal",
-  "max_hops":3
+  "reply_to":"agent.main.results"
 }'
 ```
 

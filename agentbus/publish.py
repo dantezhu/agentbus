@@ -9,37 +9,46 @@ from .messages import dump_json
 PublisherFn = Callable[[str, str, bytes], Awaitable[None]]
 
 
-def normalize_target_agent(target_agent: str) -> str:
-    target = target_agent.strip()
-    if not target:
-        raise ValueError("target agent is required")
-    return target.removeprefix("agent-")
+def normalize_agent_id(agent_id: str) -> str:
+    agent = agent_id.strip()
+    if not agent:
+        raise ValueError("agent id is required")
+    return agent.removeprefix("agent-")
+
+
+def build_task_subject(target_agent: str) -> str:
+    return f"agent.{normalize_agent_id(target_agent)}.tasks"
+
+
+def build_result_subject(reply_to_agent: str) -> str:
+    return f"agent.{normalize_agent_id(reply_to_agent)}.results"
 
 
 def build_task_message(
     *,
-    task_id: str,
     from_agent: str,
     target_agent: str,
-    task_name: str,
+    task_type: str,
     content: str,
-    reply_to: str,
-    risk_level: str,
-    max_hops: int,
+    reply_to_agent: str | None = None,
 ) -> dict[str, Any]:
     if not content:
         raise ValueError("content is required")
-    target = normalize_target_agent(target_agent)
+    if not task_type.strip():
+        raise ValueError("task_type is required")
+
+    target = normalize_agent_id(target_agent)
+    sender = normalize_agent_id(from_agent)
+    reply_agent = normalize_agent_id(reply_to_agent or sender)
     return {
-        "id": task_id,
-        "from": from_agent,
+        "id": f"task-{uuid.uuid4()}",
+        "from": f"agent-{sender}",
         "to": f"agent-{target}",
+        "reply_to_agent": f"agent-{reply_agent}",
         "type": "task.request",
-        "task": task_name,
+        "task_type": task_type,
         "payload": {"content": content},
-        "reply_to": reply_to,
-        "risk_level": risk_level,
-        "max_hops": max_hops,
+        "reply_to": build_result_subject(reply_agent),
     }
 
 
@@ -58,68 +67,49 @@ async def publish_task(
     *,
     nats_url: str,
     target_agent: str,
-    task_name: str,
+    task_type: str,
     content: str,
     from_agent: str,
-    reply_to: str,
-    task_id: str | None,
-    risk_level: str,
-    max_hops: int,
-    subject: str | None,
+    reply_to_agent: str | None = None,
     publisher: PublisherFn = nats_publisher,
 ) -> dict[str, Any]:
     if not nats_url:
         raise ValueError("nats_url is required")
-    target = normalize_target_agent(target_agent)
+    target = normalize_agent_id(target_agent)
     message = build_task_message(
-        task_id=task_id or f"task-{uuid.uuid4()}",
         from_agent=from_agent,
         target_agent=target,
-        task_name=task_name,
+        task_type=task_type,
         content=content,
-        reply_to=reply_to,
-        risk_level=risk_level,
-        max_hops=max_hops,
+        reply_to_agent=reply_to_agent,
     )
-    publish_subject = subject or f"agent.{target}.tasks"
-    await publisher(nats_url, publish_subject, dump_json(message))
+    await publisher(nats_url, build_task_subject(target), dump_json(message))
     return message
+
 
 async def publish_tasks(
     *,
     nats_url: str,
     target_agents: list[str],
-    task_name: str,
+    task_type: str,
     content: str,
     from_agent: str,
-    reply_to: str,
-    task_id: str | None,
-    risk_level: str,
-    max_hops: int,
-    subject: str | None,
+    reply_to_agent: str | None = None,
     publisher: PublisherFn = nats_publisher,
 ) -> list[dict[str, Any]]:
-    targets = [normalize_target_agent(target) for target in target_agents]
+    targets = [normalize_agent_id(target) for target in target_agents]
     if not targets:
         raise ValueError("at least one target agent is required")
-    if subject and len(targets) > 1:
-        raise ValueError("subject override cannot be used with multiple target agents")
-    if task_id and len(targets) > 1:
-        raise ValueError("task_id cannot be used with multiple target agents")
 
     messages = []
     for target in targets:
         messages.append(await publish_task(
             nats_url=nats_url,
             target_agent=target,
-            task_name=task_name,
+            task_type=task_type,
             content=content,
             from_agent=from_agent,
-            reply_to=reply_to,
-            task_id=task_id,
-            risk_level=risk_level,
-            max_hops=max_hops,
-            subject=subject,
+            reply_to_agent=reply_to_agent,
             publisher=publisher,
         ))
     return messages

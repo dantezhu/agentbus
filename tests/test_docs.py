@@ -55,7 +55,13 @@ def test_docs_use_direct_cli_args_for_publish_not_config_files():
         assert "agentbus task publish --config" not in text
         assert "--nats-url" in text
         assert "--to-agent" in text
-        assert "--task" in text
+        assert "--task-type" in text
+        assert "--task " not in text
+        assert "--reply-to " not in text
+        assert "--subject" not in text
+        assert "--task-id" not in text
+        assert "--risk-level" not in text
+        assert "--max-hops" not in text
         assert "code ping" not in text
 
 
