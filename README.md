@@ -43,6 +43,7 @@ Worker side:
 agentbus/
   config.py      TOML/env/CLI configuration
   messages.py    task/result schema and prompt builder
+  publish.py     task publishing helpers
   worker.py      NATS JetStream worker runtime
   cli.py         agentbus command-line entrypoint
 config/
@@ -50,7 +51,6 @@ config/
   nats-server.conf
 scripts/
   stream-setup.sh
-  publish-task.sh
 deploy/
   systemd/agentbus-worker.service
   launchd/com.agentbus.worker.plist
@@ -230,7 +230,7 @@ $EDITOR ~/.agentbus/config.toml
 chmod 600 ~/.agentbus/config.toml
 ```
 
-If `--config` is omitted, `agentbus worker` checks:
+If `--config` is omitted, `agentbus worker run` checks:
 
 ```text
 ./agentbus.toml
@@ -283,7 +283,7 @@ export AGENTBUS_LOG_DIR='~/.agentbus/logs'
 export AGENTBUS_LOG_MAX_BYTES=104857600
 export AGENTBUS_LOG_BACKUP_COUNT=5
 export AGENT_TASK_TIMEOUT_SECONDS=1800
-agentbus worker
+agentbus worker run
 ```
 
 Precedence:
@@ -297,7 +297,7 @@ CLI args > environment variables > TOML config > built-in defaults
 Foreground mode:
 
 ```bash
-agentbus worker --config ~/.agentbus/config.toml
+agentbus worker run --config ~/.agentbus/config.toml
 ```
 
 For long-running deployment, use one of the included templates:
@@ -322,7 +322,7 @@ Publish a test task in another terminal:
 
 ```bash
 export NATS_URL='tls://agent-main:agent_main_password@agentbus.example.com:7422'
-./scripts/publish-task.sh code ping '{"text":"hello"}'
+agentbus task publish code ping '{"text":"hello"}'
 ```
 
 The `code` argument maps to this task subject:

@@ -24,7 +24,7 @@ Use this skill when an agent needs to:
 ```text
 public NATS JetStream server
   ↓
-agentbus worker on each worker machine
+agentbus worker run on each worker machine
   ↓
 configured agent command via agent_chat_cmd
   ↓
@@ -52,7 +52,7 @@ agent.<agent_id>.heartbeat
 
 ```bash
 export NATS_URL='tls://username:password@agentbus.example.com:7422'
-./scripts/publish-task.sh code ping '{"text":"hello"}'
+agentbus task publish code ping '{"text":"hello"}'
 ```
 
 Equivalent direct publish:

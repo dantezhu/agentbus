@@ -6,7 +6,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=/path/to/agentbus
-ExecStart=/path/to/agentbus/.venv/bin/agentbus worker --config %h/.agentbus/config.toml
+ExecStart=/path/to/agentbus/.venv/bin/agentbus worker run --config %h/.agentbus/config.toml
 Restart=always
 RestartSec=5
 
