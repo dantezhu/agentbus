@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from agentbus.config import DEFAULT_CONFIG_PATHS, DEFAULT_LOG_DIR, PublishConfig, WorkerConfig, build_config, config_from_sources, load_config_file, load_publish_config
+from agentbus.config import DEFAULT_CONFIG_PATHS, DEFAULT_LOG_DIR, WorkerConfig, build_config, config_from_sources, load_config_file
 
 
 def test_default_paths_use_home_agentbus_directory():
@@ -154,24 +154,3 @@ def test_example_worker_config_uses_grouped_sections_and_loads():
     assert config.log_dir == "~/.agentbus/logs"
     assert config.log_max_bytes == 104857600
     assert config.log_backup_count == 5
-
-
-def test_load_publish_config_uses_config_file_without_environment(tmp_path, monkeypatch):
-    config_path = tmp_path / "publisher.toml"
-    config_path.write_text(
-        """
-[agent]
-id = "agent-main"
-
-[nats]
-url = "tls://agent-main:secret@agentbus.example.com:7422"
-default_result_subject = "agent.main.results"
-""".strip()
-    )
-    monkeypatch.setenv("NATS_URL", "tls://wrong@example.com:7422")
-
-    assert load_publish_config(config_path) == PublishConfig(
-        nats_url="tls://agent-main:secret@agentbus.example.com:7422",
-        from_agent="agent-main",
-        reply_to="agent.main.results",
-    )

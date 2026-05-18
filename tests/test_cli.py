@@ -25,14 +25,14 @@ def test_parser_rejects_worker_cli_overrides():
         parser.parse_args(["worker", "run", "--config", "~/.agentbus/config.toml", "--agent-id", "code"])
 
 
-def test_parser_accepts_task_publish_subcommand_with_config():
+def test_parser_accepts_task_publish_subcommand_with_direct_connection_args():
     parser = build_parser()
 
     args = parser.parse_args([
         "task",
         "publish",
-        "--config",
-        "~/.agentbus/config.toml",
+        "--nats-url",
+        "tls://agent-main:secret@agentbus.example.com:7422",
         "code",
         "ping",
         '{"text":"hello"}',
@@ -47,10 +47,24 @@ def test_parser_accepts_task_publish_subcommand_with_config():
     assert args.target_agent == "code"
     assert args.task_name == "ping"
     assert args.payload_json == '{"text":"hello"}'
-    assert args.config == "~/.agentbus/config.toml"
+    assert args.nats_url == "tls://agent-main:secret@agentbus.example.com:7422"
     assert args.from_agent == "agent-main"
     assert args.reply_to == "agent.main.results"
-    assert not hasattr(args, "nats_url")
+    assert not hasattr(args, "config")
+
+
+def test_parser_rejects_task_publish_without_nats_url():
+    parser = build_parser()
+
+    with pytest.raises(SystemExit):
+        parser.parse_args(["task", "publish", "code", "ping", '{"text":"hello"}'])
+
+
+def test_parser_rejects_task_publish_config_file():
+    parser = build_parser()
+
+    with pytest.raises(SystemExit):
+        parser.parse_args(["task", "publish", "--config", "~/.agentbus/main.toml", "code", "ping"])
 
 
 def test_configure_logging_creates_default_log_file_in_log_dir(tmp_path):

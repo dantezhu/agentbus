@@ -47,6 +47,15 @@ def test_docs_do_not_recommend_environment_variable_configuration():
         assert "AGENTBUS_LOG_DIR" not in text
 
 
+def test_docs_use_direct_cli_args_for_publish_not_config_files():
+    readme = (ROOT / "README.md").read_text()
+    skill = (ROOT / "skills" / "agentbus" / "SKILL.md").read_text()
+
+    for text in (readme, skill):
+        assert "agentbus task publish --config" not in text
+        assert "--nats-url" in text
+
+
 def test_deploy_templates_use_env_virtualenv_path():
     systemd = (ROOT / "deploy" / "systemd" / "agentbus-worker.service").read_text()
     launchd = (ROOT / "deploy" / "launchd" / "com.agentbus.worker.plist").read_text()

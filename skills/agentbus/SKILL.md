@@ -51,7 +51,9 @@ agent.<agent_id>.heartbeat
 ## Send a task
 
 ```bash
-agentbus task publish --config ~/.agentbus/main.toml code ping '{"text":"hello"}'
+agentbus task publish \
+  --nats-url 'tls://username:password@agentbus.example.com:7422' \
+  code ping '{"text":"hello"}'
 ```
 
 Equivalent direct publish:

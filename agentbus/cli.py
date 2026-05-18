@@ -8,7 +8,7 @@ import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from .config import build_config, load_publish_config
+from .config import build_config
 from .publish import publish_task
 from .worker import AgentBusWorker
 
@@ -21,9 +21,9 @@ def add_task_publish_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("target_agent", help="Target agent id, e.g. code or agent-code")
     parser.add_argument("task_name", help="Task name, e.g. ping or review_pr")
     parser.add_argument("payload_json", nargs="?", default="{}", help="Task payload JSON object")
-    parser.add_argument("--config", help="Path to TOML config file containing [nats].url")
-    parser.add_argument("--from-agent", help="Sender agent id. Defaults to [agent].id or agent-main")
-    parser.add_argument("--reply-to", help="Result subject. Defaults to [nats].default_result_subject or agent.main.results")
+    parser.add_argument("--nats-url", required=True, help="NATS connection URL, e.g. tls://user:pass@host:7422")
+    parser.add_argument("--from-agent", default="agent-main", help="Sender agent id")
+    parser.add_argument("--reply-to", default="agent.main.results", help="Result subject")
     parser.add_argument("--task-id", help="Explicit task id. Defaults to task-<uuid>")
     parser.add_argument("--risk-level", default="normal", help="Task risk level")
     parser.add_argument("--max-hops", type=int, default=3, help="Maximum delegation hops")
@@ -72,14 +72,13 @@ def configure_logging(
 
 
 async def run_task_publish(args: argparse.Namespace) -> None:
-    publish_config = load_publish_config(args.config)
     message = await publish_task(
-        nats_url=publish_config.nats_url,
+        nats_url=args.nats_url,
         target_agent=args.target_agent,
         task_name=args.task_name,
         payload_json=args.payload_json,
-        from_agent=args.from_agent or publish_config.from_agent,
-        reply_to=args.reply_to or publish_config.reply_to,
+        from_agent=args.from_agent,
+        reply_to=args.reply_to,
         task_id=args.task_id,
         risk_level=args.risk_level,
         max_hops=args.max_hops,

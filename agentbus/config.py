@@ -31,13 +31,6 @@ class WorkerConfig:
         return self.durable or self.agent_id
 
 
-@dataclass(frozen=True)
-class PublishConfig:
-    nats_url: str
-    from_agent: str = "agent-main"
-    reply_to: str = "agent.main.results"
-
-
 DEFAULT_LOG_DIR = Path.home() / ".agentbus" / "logs"
 
 DEFAULT_CONFIG_PATHS = (
@@ -196,16 +189,3 @@ def config_from_sources(*, config_path: str | os.PathLike[str] | None = None) ->
 
 def build_config(config_path: str | os.PathLike[str] | None) -> WorkerConfig:
     return config_from_sources(config_path=config_path)
-
-
-def load_publish_config(config_path: str | os.PathLike[str] | None) -> PublishConfig:
-    path = Path(config_path).expanduser() if config_path else find_default_config_file()
-    if path is None:
-        raise ValueError("config file is required; pass --config or create ~/.agentbus/config.toml")
-    data = load_config_file_data(path)
-    nats_url = data.get("nats_url")
-    if not nats_url:
-        raise ValueError("missing required config field: nats_url")
-    from_agent = str(data.get("agent_id") or "agent-main")
-    reply_to = str(data.get("default_result_subject") or "agent.main.results")
-    return PublishConfig(nats_url=str(nats_url), from_agent=from_agent, reply_to=reply_to)

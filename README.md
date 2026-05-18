@@ -338,28 +338,7 @@ deploy/launchd/com.agentbus.worker.plist
 
 Before installing a service, edit the template paths, user, working directory, and config path for the target machine.
 
-## 6. Configure a publisher
-
-Create a small config for the coordinator / publishing side:
-
-```toml
-[agent]
-id = "agent-main"
-
-[nats]
-url = "tls://agent-main:agent_main_password@agentbus.example.com:7422"
-default_result_subject = "agent.main.results"
-```
-
-Save it somewhere private, for example:
-
-```bash
-mkdir -p ~/.agentbus
-$EDITOR ~/.agentbus/main.toml
-chmod 600 ~/.agentbus/main.toml
-```
-
-## 7. Publish a test task
+## 6. Publish a test task
 
 Start a result subscriber in one terminal:
 
@@ -370,8 +349,12 @@ nats --server 'tls://agent-main:agent_main_password@agentbus.example.com:7422' s
 Publish a test task in another terminal:
 
 ```bash
-agentbus task publish --config ~/.agentbus/main.toml code ping '{"text":"hello"}'
+agentbus task publish \
+  --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
+  code ping '{"text":"hello"}'
 ```
+
+Publishing is intentionally configured with CLI arguments instead of a TOML file. Unlike the worker, it is a short one-shot command with only a few options.
 
 The `code` argument maps to this task subject:
 
