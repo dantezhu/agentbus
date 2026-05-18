@@ -60,17 +60,8 @@ skills/
 
 ## 1. Configure the NATS server
 
-NATS server source and releases:
-
-```text
-https://github.com/nats-io/nats-server
-```
-
-Official installation guide:
-
-```text
-https://docs.nats.io/running-a-nats-service/introduction/installation
-```
+- [NATS server source and releases](https://github.com/nats-io/nats-server)
+- [Official NATS installation guide](https://docs.nats.io/running-a-nats-service/introduction/installation)
 
 Simple install examples:
 
