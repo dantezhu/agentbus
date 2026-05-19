@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import TypeVar
 
 from .config import build_config
-from .publish import publish_tasks
+from .publish import DEFAULT_TASK_TYPE, publish_tasks
 from .result import read_results
 from .worker import AgentBusWorker
 
@@ -33,7 +33,7 @@ def add_task_publish_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("content", help="Task content. Stored as payload.content")
     parser.add_argument("--server-url", required=True, help="Server connection URL, e.g. nats://user:pass@host:7422")
     parser.add_argument("--to", action="append", required=True, dest="to_agents", help="Target agent id. Repeat to publish to multiple agents")
-    parser.add_argument("--task-type", required=True, help="Task type, e.g. ping or review_pr")
+    parser.add_argument("--task-type", default=DEFAULT_TASK_TYPE, help=f"Task type. Defaults to {DEFAULT_TASK_TYPE}")
     parser.add_argument("--from", dest="from_agent", default="main", help="Sender agent id")
     parser.add_argument("--reply-to", help="Agent that should receive task results. Defaults to --from")
 

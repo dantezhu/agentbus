@@ -60,6 +60,23 @@ def test_parser_accepts_task_publish_subcommand_with_named_agent_args_and_positi
     assert not hasattr(args, "config")
 
 
+def test_parser_defaults_task_type_when_omitted():
+    parser = build_parser()
+
+    args = parser.parse_args([
+        "task",
+        "publish",
+        "--server-url",
+        "nats://main:secret@agentbus.example.com:7422",
+        "--to",
+        "coder",
+        "hello",
+    ])
+
+    assert args.task_type == "default"
+    assert args.content == "hello"
+
+
 def test_parser_rejects_task_publish_without_server_url():
     parser = build_parser()
 
@@ -67,7 +84,7 @@ def test_parser_rejects_task_publish_without_server_url():
         parser.parse_args(["task", "publish", "--to", "coder", "--task-type", "ping", "hello"])
 
 
-def test_parser_rejects_task_publish_without_named_target_or_task_type():
+def test_parser_rejects_task_publish_without_named_target():
     parser = build_parser()
 
     with pytest.raises(SystemExit):
@@ -76,8 +93,6 @@ def test_parser_rejects_task_publish_without_named_target_or_task_type():
             "publish",
             "--server-url",
             "nats://main:secret@agentbus.example.com:7422",
-            "coder",
-            "ping",
             "hello",
         ])
 

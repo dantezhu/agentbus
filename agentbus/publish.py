@@ -7,6 +7,7 @@ from typing import Any
 from .messages import dump_json
 
 PublisherFn = Callable[[str, str, bytes], Awaitable[None]]
+DEFAULT_TASK_TYPE = "default"
 
 
 def require_agent_id(agent_id: str) -> str:

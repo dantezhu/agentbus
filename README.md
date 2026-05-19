@@ -382,14 +382,13 @@ agentbus task publish \
   --to reviewer \
   --from main \
   --reply-to main \
-  --task-type ping \
   'hello'
 ```
 
 Publishing is intentionally configured with CLI arguments instead of a TOML file. Unlike the worker, it is a short one-shot command with only a few options.
 Only the task content is positional; agent routing and task metadata are named options so the command remains readable.
 Repeat `--to` to publish the same task content to multiple agents. AgentBus sends one task message per target.
-`--task-type` names the kind of work to run, while the final positional argument is the task content.
+`--task-type` is optional and defaults to `default`; pass it when you want to classify the work. The final positional argument is the task content.
 `--reply-to` is an agent id, like `--from` and `--to`. It controls which agent result inbox receives the worker execution record; when omitted, it defaults to `--from`. AgentBus derives the result subject internally as `agentbus.<reply_to>.results`.
 The positional content is stored as a plain string at `payload.content`. If you want to send JSON-like data through the CLI, pass it as text and let the receiving agent interpret it.
 
@@ -399,7 +398,6 @@ Examples:
 agentbus task publish \
   --server-url 'nats://main:main_password@agentbus.example.com:7422' \
   --to coder \
-  --task-type ping \
   'hello'
 
 agentbus task publish \
