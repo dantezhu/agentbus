@@ -27,11 +27,6 @@ max_reconnect_attempts = -1
 # Use tls:// instead if the server TLS block is enabled.
 url = "nats://username:password@agentbus.example.com:7422"
 stream = "AGENT_TASKS"
-# Task subject, durable consumer, and result subject are derived from task routing:
-#   task subject: agentbus.<agent.id>.tasks
-#   durable:      <agent.id>
-#   result subject: agentbus.<task.reply_to or task.from>.results
-
 [log]
 dir = "~/.agentbus/logs"
 max_bytes = 104857600
