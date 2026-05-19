@@ -24,6 +24,7 @@ task_timeout_seconds = 1800
 max_task_bytes = 1048576
 reconnect_time_wait_seconds = 2
 max_reconnect_attempts = -1
+
 [log]
 dir = "~/.agentbus/logs"
 max_bytes = 104857600
