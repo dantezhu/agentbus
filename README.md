@@ -390,7 +390,7 @@ Publishing uses CLI arguments instead of a TOML file because it is a short one-s
 | Argument | Required | Meaning |
 | --- | --- | --- |
 | `--server-url` | yes | NATS server URL. |
-| `--to` | yes | Target agent id. Repeat it to publish the same content to multiple agents; AgentBus sends one task message per target. |
+| `--to` | yes | Target agent id. Repeat it to publish the same content to multiple agents; AgentBus publishes one task message per target. |
 | `content` | yes | Final positional argument. Stored as a plain string at `payload.content`; pass JSON-like data as text and let the receiving agent interpret it. |
 | `--from` | no, defaults to `main` | Sender agent id. |
 | `--reply-to` | no, defaults to `--from` | Agent id whose result inbox receives the worker execution record. AgentBus derives `agentbus.<reply_to>.results`. |
