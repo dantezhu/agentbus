@@ -183,7 +183,7 @@ sudo install -m 0600 /etc/letsencrypt/live/agentbus.example.com/privkey.pem /etc
 sudo chown -R nats:nats /etc/nats/tls 2>/dev/null || true
 ```
 
-Then enable this block in the NATS config file:
+Then uncomment or add the TLS block in the NATS config file:
 
 ```text
 tls {
@@ -192,30 +192,24 @@ tls {
 }
 ```
 
-The examples in this README use the normal `nats://` URL form:
+The examples in this README use the normal non-TLS URL form:
 
 ```text
 nats://main:main_password@agentbus.example.com:7422
 ```
 
-If you enable the TLS block above, use `tls://` instead, for example `tls://main:main_password@agentbus.example.com:7422`. Avoid exposing non-TLS `nats://` connections to the public internet.
+If the TLS block is enabled, switch client URLs to `tls://`, for example:
 
-For a real deployment, run the same command under your service manager, for example systemd, Docker, or a managed NATS service.
+```text
+tls://main:main_password@agentbus.example.com:7422
+```
+
+For public internet deployments, avoid exposing non-TLS `nats://` connections. Use TLS or put the NATS client port behind a VPN/private network.
 
 Important network notes:
 
 - Expose the NATS client port, `7422` in these examples, only to machines that need to connect. The NATS default is `4222`; using a non-default port reduces scanner noise but is not a security boundary.
 - Keep the monitoring port `8222` private or bind it only to localhost/VPN.
-- Use TLS for public internet deployments. If TLS is enabled, clients should use a `tls://...` NATS URL or equivalent TLS client options.
-
-The sample config includes a commented TLS block:
-
-```text
-# tls {
-#   cert_file: "/etc/nats/tls/fullchain.pem"
-#   key_file: "/etc/nats/tls/privkey.pem"
-# }
-```
 
 ## 2. Create JetStream streams
 
