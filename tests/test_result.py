@@ -49,7 +49,11 @@ class FakeSubscription:
     def __init__(self, live_messages):
         self.live_messages = list(live_messages)
 
-    async def messages(self):
+    @property
+    def messages(self):
+        return self._messages()
+
+    async def _messages(self):
         for message in self.live_messages:
             yield message
 

@@ -80,7 +80,7 @@ async def read_results(
             return
 
         sub = await nc.subscribe(subject)
-        async for msg in sub.messages():
+        async for msg in sub.messages:
             emit(_decode_message_data(msg.data))
     finally:
         await nc.drain()
