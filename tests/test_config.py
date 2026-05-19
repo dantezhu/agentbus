@@ -28,9 +28,6 @@ max_reconnect_attempts = -1
 [nats]
 url = "nats://coder:secret@example:4222"
 stream = "AGENT_TASKS"
-durable = "coder"
-task_subject = "agentbus.coder.tasks"
-default_result_subject = "agentbus.main.results"
 
 [log]
 dir = "~/custom-agentbus-logs"
@@ -47,9 +44,6 @@ backup_count = 7
         server_url="nats://coder:secret@example:4222",
         agent_chat_cmd=["agent-cli", "chat", "--oneshot", "{input}"],
         stream="AGENT_TASKS",
-        durable="coder",
-        task_subject="agentbus.coder.tasks",
-        default_result_subject="agentbus.main.results",
         task_timeout_seconds=900,
         extra_instruction="Keep results concise.",
         log_dir="~/custom-agentbus-logs",
@@ -86,8 +80,28 @@ stream = "FILE_STREAM"
     assert config.server_url == "nats://file@example:4222"
     assert config.stream == "FILE_STREAM"
     assert config.task_subject == "agentbus.file-agent.tasks"
+    assert config.consumer_name == "file-agent"
     assert config.agent_chat_cmd == ["agent-cli", "chat", "--oneshot", "{input}"]
     assert config.task_timeout_seconds == 300
+
+
+@pytest.mark.parametrize("field", ["durable", "task_subject", "default_result_subject"])
+def test_nats_routing_fields_are_derived_and_not_configurable(tmp_path, field):
+    config_path = tmp_path / "agentbus.toml"
+    config_path.write_text(
+        f"""
+[agent]
+id = "coder"
+chat_cmd = ["agent-cli", "chat", "--oneshot", "{{input}}"]
+
+[nats]
+url = "nats://coder:secret@example:4222"
+{field} = "custom-value"
+""".strip()
+    )
+
+    with pytest.raises(ValueError, match=f"unknown config fields: {field}"):
+        load_config_file(config_path)
 
 
 def test_agent_chat_cmd_is_required_and_unknown_names_are_rejected(tmp_path):

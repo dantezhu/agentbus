@@ -315,10 +315,6 @@ max_reconnect_attempts = -1
 # Use tls:// instead if the server TLS block is enabled.
 url = "nats://coder:coder_password@agentbus.example.com:7422"
 stream = "AGENT_TASKS"
-task_subject = "agentbus.coder.tasks"
-default_result_subject = "agentbus.main.results"
-# Durable consumer name. Keep stable per worker identity so NATS remembers ack/progress.
-durable = "coder"
 
 [log]
 dir = "~/.agentbus/logs"
@@ -326,6 +322,16 @@ max_bytes = 104857600
 backup_count = 5
 
 ```
+
+Worker routing fields are derived, not configured:
+
+```text
+task subject   = agentbus.<agent.id>.tasks
+durable        = <agent.id>
+result subject = agentbus.<task.reply_to or task.from>.results
+```
+
+This keeps worker config aligned with `agentbus task publish`, which also derives task and result subjects from agent ids. Multiple workers with the same `agent.id` are replicas of the same logical agent and share the same durable consumer/progress.
 
 `chat_cmd` must be a TOML array of strings. AgentBus rejects string-form commands so the generated multi-line prompt is always inserted as one explicit argv argument, never shell-parsed.
 
@@ -336,8 +342,6 @@ chat_cmd = ["agent-cli", "run", "--prompt", "{input}", "--json"]
 # Hermes example.
 chat_cmd = ["hermes", "chat", "-q", "-Q", "{input}"]
 ```
-
-`durable` is the NATS JetStream durable consumer name. It is not a password or a server address; it is the stable name NATS uses to remember this worker's delivery progress. If the worker restarts with the same durable name, NATS can continue from unacked / not-yet-delivered messages instead of treating it as a brand-new ephemeral consumer.
 
 AgentBus intentionally does not use environment variables for worker configuration. Put worker settings in TOML and pass `--config` when you do not want the default path.
 

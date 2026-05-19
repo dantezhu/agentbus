@@ -117,7 +117,7 @@ class AgentBusWorker:
         if self._js is None:
             await self.connect()
         assert self._js is not None
-        subject = self.config.task_subject or f"agent.{self.config.agent_id}.tasks"
+        subject = self.config.task_subject
         durable = self.config.consumer_name
         logger.info("AgentBus worker starting: subject=%s durable=%s stream=%s", subject, durable, self.config.stream)
         sub = await self._js.pull_subscribe(subject, durable=durable, stream=self.config.stream)

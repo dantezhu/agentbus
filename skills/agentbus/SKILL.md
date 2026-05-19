@@ -132,10 +132,6 @@ max_reconnect_attempts = -1
 [nats]
 url = "nats://username:password@agentbus.example.com:7422"
 stream = "AGENT_TASKS"
-task_subject = "agentbus.coder.tasks"
-default_result_subject = "agentbus.main.results"
-# Stable JetStream durable consumer name for this worker identity.
-durable = "coder"
 
 [log]
 dir = "~/.agentbus/logs"
@@ -143,7 +139,9 @@ max_bytes = 104857600
 backup_count = 5
 ```
 
-`chat_cmd` is required, must be a TOML array of strings, and must include the literal `{input}` placeholder where AgentBus should insert the generated prompt. String-form commands are rejected so the prompt is always passed as one explicit argv argument, never shell-parsed. For prompts between flags, use `chat_cmd = ["agent-cli", "run", "--prompt", "{input}", "--json"]`. For Hermes workers, use `chat_cmd = ["hermes", "chat", "-q", "-Q", "{input}"]`. `durable` is the stable NATS JetStream consumer name used to remember worker delivery progress across restarts.
+`chat_cmd` is required, must be a TOML array of strings, and must include the literal `{input}` placeholder where AgentBus should insert the generated prompt. String-form commands are rejected so the prompt is always passed as one explicit argv argument, never shell-parsed. For prompts between flags, use `chat_cmd = ["agent-cli", "run", "--prompt", "{input}", "--json"]`. For Hermes workers, use `chat_cmd = ["hermes", "chat", "-q", "-Q", "{input}"]`.
+
+Worker routing fields are derived and not configurable: the task subject is `agentbus.<agent.id>.tasks`, the durable consumer name is `<agent.id>`, and results are published to `agentbus.<task.reply_to or task.from>.results`.
 
 ## Safety rule
 
@@ -151,7 +149,7 @@ When a task may cause irreversible side effects, external sends, production chan
 
 ## Troubleshooting
 
-1. Confirm the task subject matches the worker's `agent_id` / `task_subject`.
+1. Confirm the task subject derived from `[agent].id` is `agentbus.<id>.tasks` and matches the target used by `agentbus task publish --to <id>`.
 2. Confirm the worker can connect to `[nats].url`.
 3. Confirm NATS user permissions allow subscribe on `agentbus.<id>.tasks` and publish on result subjects.
 4. Confirm TOML `chat_cmd` works locally before starting the worker.

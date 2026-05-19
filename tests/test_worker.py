@@ -37,9 +37,6 @@ def make_config():
         agent_id="coder",
         server_url="nats://example:4222",
         agent_chat_cmd=["agent-cli", "chat", "--oneshot", "{input}"],
-        durable="coder",
-        task_subject="agentbus.coder.tasks",
-        default_result_subject="agentbus.main.results",
     )
 
 
@@ -189,3 +186,30 @@ def test_run_forever_closes_nats_connection_when_cancelled():
         return worker._nc.drained
 
     assert asyncio.run(scenario()) is True
+
+
+def test_run_forever_derives_subject_and_durable_from_agent_id():
+    class FakeSubscription:
+        async def fetch(self, count, timeout):
+            raise asyncio.CancelledError
+
+    class FakeJetStream:
+        def __init__(self):
+            self.calls = []
+
+        async def pull_subscribe(self, subject, *, durable, stream):
+            self.calls.append({"subject": subject, "durable": durable, "stream": stream})
+            return FakeSubscription()
+
+    async def scenario():
+        worker = AgentBusWorker(make_config())
+        worker._js = FakeJetStream()
+
+        with pytest.raises(asyncio.CancelledError):
+            await worker.run_forever()
+
+        return worker._js.calls
+
+    assert asyncio.run(scenario()) == [
+        {"subject": "agentbus.coder.tasks", "durable": "coder", "stream": "AGENT_TASKS"}
+    ]

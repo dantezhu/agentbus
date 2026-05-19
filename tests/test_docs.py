@@ -54,6 +54,21 @@ def test_docs_do_not_recommend_environment_variable_configuration():
         assert "AGENTBUS_LOG_DIR" not in text
 
 
+def test_docs_do_not_expose_derived_worker_routing_fields():
+    readme = (ROOT / "README.md").read_text()
+    example = (ROOT / "config" / "agentbus.worker.example.toml").read_text()
+    skill = (ROOT / "skills" / "agentbus" / "SKILL.md").read_text()
+
+    for text in (readme, example, skill):
+        assert "task_subject =" not in text
+        assert "default_result_subject =" not in text
+        assert "durable =" not in text
+
+    assert "task subject" in readme
+    assert "result subject" in readme
+    assert "durable" in readme
+
+
 def test_docs_use_direct_cli_args_for_publish_not_config_files():
     readme = (ROOT / "README.md").read_text()
     skill = (ROOT / "skills" / "agentbus" / "SKILL.md").read_text()

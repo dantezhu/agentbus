@@ -13,9 +13,6 @@ class WorkerConfig:
     server_url: str
     agent_chat_cmd: list[str]
     stream: str = "AGENT_TASKS"
-    durable: str | None = None
-    task_subject: str | None = None
-    default_result_subject: str = "agentbus.main.results"
     task_timeout_seconds: int = 1800
     extra_instruction: str = ""
     log_dir: str = "~/.agentbus/logs"
@@ -27,7 +24,11 @@ class WorkerConfig:
 
     @property
     def consumer_name(self) -> str:
-        return self.durable or self.agent_id
+        return self.agent_id
+
+    @property
+    def task_subject(self) -> str:
+        return f"agentbus.{self.agent_id}.tasks"
 
 
 DEFAULT_LOG_DIR = Path.home() / ".agentbus" / "logs"
@@ -48,9 +49,6 @@ SECTION_FIELD_MAP = {
     "nats": {
         "url": "server_url",
         "stream": "stream",
-        "durable": "durable",
-        "task_subject": "task_subject",
-        "default_result_subject": "default_result_subject",
     },
     "worker": {
         "task_timeout_seconds": "task_timeout_seconds",
@@ -117,7 +115,6 @@ def find_default_config_file() -> Path | None:
 def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
     defaults = {
         "stream": "AGENT_TASKS",
-        "default_result_subject": "agentbus.main.results",
         "task_timeout_seconds": 1800,
         "extra_instruction": "",
         "log_dir": str(DEFAULT_LOG_DIR),
@@ -131,9 +128,6 @@ def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
         "agent_id",
         "server_url",
         "stream",
-        "durable",
-        "task_subject",
-        "default_result_subject",
         "agent_chat_cmd",
         "task_timeout_seconds",
         "extra_instruction",
@@ -154,16 +148,11 @@ def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
         raise ValueError(f"missing required config fields: {', '.join(missing)}")
 
     agent_id = str(merged["agent_id"])
-    durable = merged.get("durable")
-    task_subject = merged.get("task_subject")
     return WorkerConfig(
         agent_id=agent_id,
         server_url=str(merged["server_url"]),
         agent_chat_cmd=normalize_agent_chat_cmd(merged["agent_chat_cmd"]),
         stream=str(merged["stream"]),
-        durable=str(durable) if durable else agent_id,
-        task_subject=str(task_subject) if task_subject else f"agentbus.{agent_id}.tasks",
-        default_result_subject=str(merged["default_result_subject"]),
         task_timeout_seconds=int(merged["task_timeout_seconds"]),
         extra_instruction=str(merged["extra_instruction"]),
         log_dir=str(merged["log_dir"]),
