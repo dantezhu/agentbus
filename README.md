@@ -353,7 +353,7 @@ deploy/supervisor/agentbus-worker.conf
 
 Before installing a service, edit the template paths, user, working directory, and config path for the target machine.
 
-## 6. Publish a test task
+## 6. Publish a task
 
 Read the latest result in one terminal:
 
@@ -373,7 +373,7 @@ agentbus result get \
   --watch
 ```
 
-Publish a test task in another terminal:
+Publish a task in another terminal:
 
 ```bash
 agentbus task publish \
