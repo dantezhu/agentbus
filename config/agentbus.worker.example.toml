@@ -11,9 +11,8 @@ id = "coder"
 # Required. Must be a TOML array of strings. String-form commands are rejected
 # so the generated multi-line prompt replaces one argv argument exactly.
 chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
-# Use {input} where the generated prompt belongs.
+# Alternative examples:
 # chat_cmd = ["agent-cli", "run", "--prompt", "{input}", "--json"]
-# Hermes example:
 # chat_cmd = ["hermes", "chat", "-Q", "-q", "{input}"]
 extra_instruction = ""
 
