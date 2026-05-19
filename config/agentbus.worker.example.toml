@@ -14,7 +14,7 @@ chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 # Use {input} where the generated prompt belongs.
 # chat_cmd = ["agent-cli", "run", "--prompt", "{input}", "--json"]
 # Hermes example:
-# chat_cmd = ["hermes", "chat", "-q", "-Q", "{input}"]
+# chat_cmd = ["hermes", "chat", "-Q", "-q", "{input}"]
 extra_instruction = ""
 
 [worker]

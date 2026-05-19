@@ -51,7 +51,8 @@ def test_readme_and_example_document_chat_cmd_input_placeholder_and_hermes():
 
     for text in (readme, example, skill):
         assert "{input}" in text
-        assert '["hermes", "chat", "-q", "-Q", "{input}"]' in text
+        assert '["hermes", "chat", "-Q", "-q", "{input}"]' in text
+        assert '["hermes", "chat", "-q", "-Q", "{input}"]' not in text
 
 
 def test_docs_do_not_recommend_environment_variable_configuration():

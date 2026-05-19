@@ -328,8 +328,9 @@ Worker routing fields and JetStream stream names are derived or fixed, not confi
 # Prompt between flags.
 chat_cmd = ["agent-cli", "run", "--prompt", "{input}", "--json"]
 
-# Hermes example.
-chat_cmd = ["hermes", "chat", "-q", "-Q", "{input}"]
+# Hermes example. Keep `-Q` before `-q`, or put it after `{input}`;
+# `-q` must be followed immediately by the query text.
+chat_cmd = ["hermes", "chat", "-Q", "-q", "{input}"]
 ```
 
 AgentBus intentionally does not use environment variables for worker configuration. Put worker settings in TOML and pass `--config` when you do not want the default path.

@@ -136,7 +136,7 @@ max_bytes = 104857600
 backup_count = 5
 ```
 
-`chat_cmd` is required, must be a TOML array of strings, and must include the literal `{input}` placeholder where AgentBus should insert the generated prompt. String-form commands are rejected so the prompt is always passed as one explicit argv argument, never shell-parsed. For prompts between flags, use `chat_cmd = ["agent-cli", "run", "--prompt", "{input}", "--json"]`. For Hermes workers, use `chat_cmd = ["hermes", "chat", "-q", "-Q", "{input}"]`.
+`chat_cmd` is required, must be a TOML array of strings, and must include the literal `{input}` placeholder where AgentBus should insert the generated prompt. String-form commands are rejected so the prompt is always passed as one explicit argv argument, never shell-parsed. For prompts between flags, use `chat_cmd = ["agent-cli", "run", "--prompt", "{input}", "--json"]`. For Hermes workers, use `chat_cmd = ["hermes", "chat", "-Q", "-q", "{input}"]`; `-q` must be followed immediately by the query text.
 
 Worker routing fields are derived and not configurable: the task subject is `agentbus.<agent.id>.tasks`, the durable consumer name is `<agent.id>`, and results are published to `agentbus.<task.reply_to or task.from>.results`.
 
