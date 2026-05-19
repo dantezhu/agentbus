@@ -41,7 +41,7 @@ Examples use the normal server URL form such as `nats://username:password@agentb
 
 ## Subject convention
 
-Agent IDs are used literally in subjects. AgentBus does not strip or add prefixes such as `agent-`.
+Agent IDs are used literally in subjects.
 
 ```text
 agentbus.<agent_id>.tasks

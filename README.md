@@ -426,7 +426,7 @@ agentbus.main.results
 
 Recommended convention:
 
-Agent IDs are used literally in subjects. AgentBus does not strip or add prefixes such as `agent-`.
+Agent IDs are used literally in subjects.
 
 ```text
 agentbus.<agent_id>.tasks       tasks for one worker agent
