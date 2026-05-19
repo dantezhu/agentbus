@@ -25,6 +25,8 @@ def test_readme_documents_nats_server_source_and_install_steps():
     assert "nats-server -c /etc/nats-server.conf" in readme
     assert "nats-server -c /etc/nats/agentbus.conf" in readme
     assert "store_dir: \"/data/nats\"" in readme
+    assert "jetstream: enabled" in readme
+    assert "JetStream not enabled for account (10039)" in readme
     assert "/data/jetstream" not in readme
     assert "sudo chmod 600 /etc/nats-server.conf" not in readme
     assert "sudo chown -R nats:nats /data" not in readme

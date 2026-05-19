@@ -150,7 +150,16 @@ jetstream {
   max_mem_store: 256MiB
   max_file_store: 10GiB
 }
+
+accounts {
+  AGENTS: {
+    jetstream: enabled
+    users: [ ... ]
+  }
+}
 ```
+
+The top-level `jetstream` block turns on JetStream for the server. Because this sample uses named accounts, the `AGENTS` account must also have `jetstream: enabled`; otherwise stream creation fails with `JetStream not enabled for account (10039)`.
 
 NATS stores JetStream data under a `jetstream/` child directory of `store_dir`, so this example writes data under `/data/nats/jetstream`. Avoid setting `store_dir` to a path that already ends in `jetstream`, or you will get a nested `jetstream/jetstream` directory.
 
