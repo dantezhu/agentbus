@@ -16,7 +16,7 @@ metadata:
 Use this skill when an agent needs to:
 
 - send an asynchronous task to another agent;
-- inspect results from `agent.agent-main.results` or `agent.<id>.results`;
+- inspect results from `agentbus.main.results` or `agentbus.<id>.results`;
 - troubleshoot NATS/JetStream routing for AgentBus.
 
 ## Core model
@@ -44,10 +44,10 @@ For public deployments, prefer a domain and TLS URL such as `tls://username:pass
 Agent IDs are used literally in subjects. AgentBus does not strip or add prefixes such as `agent-`.
 
 ```text
-agent.<agent_id>.tasks
-agent.<agent_id>.results
-agent.agent-main.results
-agent.<agent_id>.heartbeat
+agentbus.<agent_id>.tasks
+agentbus.<agent_id>.results
+agentbus.main.results
+agentbus.<agent_id>.heartbeat
 ```
 
 ## Send a task
@@ -55,15 +55,15 @@ agent.<agent_id>.heartbeat
 ```bash
 agentbus task publish \
   --nats-url 'tls://username:password@agentbus.example.com:7422' \
-  --to agent-code \
-  --to agent-doc \
-  --from agent-main \
-  --reply-to agent-main \
+  --to coder \
+  --to reviewer \
+  --from main \
+  --reply-to main \
   --task-type ping \
   'hello'
 ```
 
-Repeat `--to` to send the same content to multiple agents. AgentBus publishes one task message per target agent. `--reply-to` is an agent id, like `--from` and `--to`; it controls which agent result inbox receives the worker execution record. When omitted, it defaults to `--from`, and AgentBus derives the result subject internally as `agent.<reply_to>.results`.
+Repeat `--to` to send the same content to multiple agents. AgentBus publishes one task message per target agent. `--reply-to` is an agent id, like `--from` and `--to`; it controls which agent result inbox receives the worker execution record. When omitted, it defaults to `--from`, and AgentBus derives the result subject internally as `agentbus.<reply_to>.results`.
 The positional content is stored as a plain string at `payload.content`. If you need JSON-like content, pass it as text and let the receiving agent interpret it.
 
 JSON-like text example:
@@ -71,7 +71,7 @@ JSON-like text example:
 ```bash
 agentbus task publish \
   --nats-url 'tls://username:password@agentbus.example.com:7422' \
-  --to agent-code \
+  --to coder \
   --task-type batch \
   '[{"url":"https://example.com"}]'
 ```
@@ -79,11 +79,11 @@ agentbus task publish \
 Equivalent direct publish:
 
 ```bash
-nats --server 'tls://username:password@agentbus.example.com:7422' pub agent.agent-code.tasks '{
+nats --server 'tls://username:password@agentbus.example.com:7422' pub agentbus.coder.tasks '{
   "id":"task-001",
-  "from":"agent-main",
-  "to":"agent-code",
-  "reply_to":"agent-main",
+  "from":"main",
+  "to":"coder",
+  "reply_to":"main",
   "type":"task.request",
   "task_type":"ping",
   "payload":{"content":"hello"}
@@ -95,7 +95,7 @@ nats --server 'tls://username:password@agentbus.example.com:7422' pub agent.agen
 ```bash
 agentbus result get \
   --nats-url 'tls://username:password@agentbus.example.com:7422' \
-  --agent agent-main
+  --agent main
 ```
 
 `--limit` means read the latest N stored results first. The meaning is the same with and without `--watch`.
@@ -105,7 +105,7 @@ Results are worker-generated execution records, not the primary agent-to-agent r
 ```bash
 agentbus result get \
   --nats-url 'tls://username:password@agentbus.example.com:7422' \
-  --agent agent-main \
+  --agent main \
   --limit 20 \
   --watch
 ```
@@ -120,7 +120,7 @@ Default user config path:
 
 ```toml
 [agent]
-id = "agent-code"
+id = "coder"
 chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 
 [worker]
@@ -132,10 +132,10 @@ max_reconnect_attempts = -1
 [nats]
 url = "tls://username:password@agentbus.example.com:7422"
 stream = "AGENT_TASKS"
-task_subject = "agent.agent-code.tasks"
-default_result_subject = "agent.agent-main.results"
+task_subject = "agentbus.coder.tasks"
+default_result_subject = "agentbus.main.results"
 # Stable JetStream durable consumer name for this worker identity.
-durable = "agent-code"
+durable = "coder"
 
 [log]
 dir = "~/.agentbus/logs"
@@ -153,6 +153,6 @@ When a task may cause irreversible side effects, external sends, production chan
 
 1. Confirm the task subject matches the worker's `agent_id` / `task_subject`.
 2. Confirm the worker can connect to `[nats].url`.
-3. Confirm NATS user permissions allow subscribe on `agent.<id>.tasks` and publish on result subjects.
+3. Confirm NATS user permissions allow subscribe on `agentbus.<id>.tasks` and publish on result subjects.
 4. Confirm TOML `chat_cmd` works locally before starting the worker.
 5. Check worker logs at `~/.agentbus/logs/agentbus-worker.log` for invalid JSON, command timeout, or publish failures.

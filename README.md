@@ -115,9 +115,9 @@ If you prefer a project-specific filename such as `/etc/nats/agentbus.conf`, tha
 At minimum, change these values:
 
 ```text
-agent-main password
-agent-code password
-agent-doc password
+main password
+coder password
+reviewer password
 client port, if `7422` is not appropriate
 TLS cert/key paths, if public internet clients will connect
 jetstream.store_dir, if /data/jetstream is not appropriate
@@ -126,9 +126,9 @@ jetstream.store_dir, if /data/jetstream is not appropriate
 The sample config defines three users:
 
 ```text
-agent-main   publishes tasks and subscribes to central results
-agent-code   subscribes to agent.agent-code.tasks and publishes results
-agent-doc    subscribes to agent.agent-doc.tasks and publishes results
+main   publishes tasks and subscribes to central results
+coder   subscribes to agentbus.coder.tasks and publishes results
+reviewer    subscribes to agentbus.reviewer.tasks and publishes results
 ```
 
 It also enables JetStream:
@@ -173,7 +173,7 @@ tls {
 Clients should then use the domain and `tls://` scheme:
 
 ```text
-tls://agent-main:agent_main_password@agentbus.example.com:7422
+tls://main:main_password@agentbus.example.com:7422
 ```
 
 If you do not enable TLS, use `nats://...`, but avoid exposing that setup to the public internet.
@@ -205,25 +205,25 @@ The sample config includes a commented TLS block:
 
 After the NATS server is running, create the task and result streams.
 
-Use a user with JetStream API permission. In the sample config, `agent-main` has `$JS.API.>` access:
+Use a user with JetStream API permission. In the sample config, `main` has `$JS.API.>` access:
 
 ```bash
-./scripts/stream-setup.sh 'tls://agent-main:agent_main_password@agentbus.example.com:7422'
+./scripts/stream-setup.sh 'tls://main:main_password@agentbus.example.com:7422'
 ```
 
 This creates:
 
 ```text
-AGENT_TASKS     subjects: agent.*.tasks    max age: 7d
-AGENT_RESULTS   subjects: agent.*.results  max age: 30d
+AGENT_TASKS     subjects: agentbus.*.tasks    max age: 7d
+AGENT_RESULTS   subjects: agentbus.*.results  max age: 30d
 ```
 
 You can inspect the streams with:
 
 ```bash
-nats --server 'tls://agent-main:agent_main_password@agentbus.example.com:7422' stream ls
-nats --server 'tls://agent-main:agent_main_password@agentbus.example.com:7422' stream info AGENT_TASKS
-nats --server 'tls://agent-main:agent_main_password@agentbus.example.com:7422' stream info AGENT_RESULTS
+nats --server 'tls://main:main_password@agentbus.example.com:7422' stream ls
+nats --server 'tls://main:main_password@agentbus.example.com:7422' stream info AGENT_TASKS
+nats --server 'tls://main:main_password@agentbus.example.com:7422' stream info AGENT_RESULTS
 ```
 
 ## 3. Install the worker
@@ -278,19 +278,19 @@ Required worker fields:
 
 ```toml
 [agent]
-id = "agent-code"
+id = "coder"
 # {input} is required and marks where AgentBus inserts the generated prompt.
 chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 
 [nats]
-url = "tls://agent-code:agent_code_password@agentbus.example.com:7422"
+url = "tls://coder:coder_password@agentbus.example.com:7422"
 ```
 
 A fuller example:
 
 ```toml
 [agent]
-id = "agent-code"
+id = "coder"
 chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 extra_instruction = ""
 
@@ -301,12 +301,12 @@ reconnect_time_wait_seconds = 2
 max_reconnect_attempts = -1
 
 [nats]
-url = "tls://agent-code:agent_code_password@agentbus.example.com:7422"
+url = "tls://coder:coder_password@agentbus.example.com:7422"
 stream = "AGENT_TASKS"
-task_subject = "agent.agent-code.tasks"
-default_result_subject = "agent.agent-main.results"
+task_subject = "agentbus.coder.tasks"
+default_result_subject = "agentbus.main.results"
 # Durable consumer name. Keep stable per worker identity so NATS remembers ack/progress.
-durable = "agent-code"
+durable = "coder"
 
 [log]
 dir = "~/.agentbus/logs"
@@ -353,16 +353,16 @@ Read the latest result in one terminal:
 
 ```bash
 agentbus result get \
-  --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
-  --agent agent-main
+  --nats-url 'tls://main:main_password@agentbus.example.com:7422' \
+  --agent main
 ```
 
 To keep watching after reading recent history, add `--watch`. `--limit` has the same meaning whether or not `--watch` is set: read the latest N stored results first.
 
 ```bash
 agentbus result get \
-  --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
-  --agent agent-main \
+  --nats-url 'tls://main:main_password@agentbus.example.com:7422' \
+  --agent main \
   --limit 20 \
   --watch
 ```
@@ -371,11 +371,11 @@ Publish a test task in another terminal:
 
 ```bash
 agentbus task publish \
-  --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
-  --to agent-code \
-  --to agent-doc \
-  --from agent-main \
-  --reply-to agent-main \
+  --nats-url 'tls://main:main_password@agentbus.example.com:7422' \
+  --to coder \
+  --to reviewer \
+  --from main \
+  --reply-to main \
   --task-type ping \
   'hello'
 ```
@@ -384,36 +384,36 @@ Publishing is intentionally configured with CLI arguments instead of a TOML file
 Only the task content is positional; agent routing and task metadata are named options so the command remains readable.
 Repeat `--to` to publish the same task content to multiple agents. AgentBus sends one task message per target.
 `--task-type` names the kind of work to run, while the final positional argument is the task content.
-`--reply-to` is an agent id, like `--from` and `--to`. It controls which agent result inbox receives the worker execution record; when omitted, it defaults to `--from`. AgentBus derives the result subject internally as `agent.<reply_to>.results`.
+`--reply-to` is an agent id, like `--from` and `--to`. It controls which agent result inbox receives the worker execution record; when omitted, it defaults to `--from`. AgentBus derives the result subject internally as `agentbus.<reply_to>.results`.
 The positional content is stored as a plain string at `payload.content`. If you want to send JSON-like data through the CLI, pass it as text and let the receiving agent interpret it.
 
 Examples:
 
 ```bash
 agentbus task publish \
-  --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
-  --to agent-code \
+  --nats-url 'tls://main:main_password@agentbus.example.com:7422' \
+  --to coder \
   --task-type ping \
   'hello'
 
 agentbus task publish \
-  --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
-  --to agent-code \
+  --nats-url 'tls://main:main_password@agentbus.example.com:7422' \
+  --to coder \
   --task-type batch \
   '[{"url":"https://example.com"}]'
 ```
 
-The `--to agent-code` and `--to agent-doc` options map directly to these task subjects:
+The `--to coder` and `--to reviewer` options map directly to these task subjects:
 
 ```text
-agent.agent-code.tasks
-agent.agent-doc.tasks
+agentbus.coder.tasks
+agentbus.reviewer.tasks
 ```
 
-If the target workers are running, `agentbus result get --agent agent-main` should receive `task.result` messages from:
+If the target workers are running, `agentbus result get --agent main` should receive `task.result` messages from:
 
 ```text
-agent.agent-main.results
+agentbus.main.results
 ```
 
 ## Message subjects
@@ -423,18 +423,18 @@ Recommended convention:
 Agent IDs are used literally in subjects. AgentBus does not strip or add prefixes such as `agent-`.
 
 ```text
-agent.<agent_id>.tasks       tasks for one worker agent
-agent.<agent_id>.results     optional direct result stream per agent
-agent.agent-main.results           central result subject for the coordinator
-agent.<agent_id>.heartbeat   optional health events
+agentbus.<agent_id>.tasks       tasks for one worker agent
+agentbus.<agent_id>.results     optional direct result stream per agent
+agentbus.main.results           central result subject for the coordinator
+agentbus.<agent_id>.heartbeat   optional health events
 ```
 
 Examples:
 
 ```text
-agent.agent-code.tasks
-agent.agent-doc.tasks
-agent.agent-main.results
+agentbus.coder.tasks
+agentbus.reviewer.tasks
+agentbus.main.results
 ```
 
 ## Task message
@@ -442,9 +442,9 @@ agent.agent-main.results
 ```json
 {
   "id": "task-20260518-0001",
-  "from": "agent-main",
-  "to": "agent-code",
-  "reply_to": "agent-main",
+  "from": "main",
+  "to": "coder",
+  "reply_to": "main",
   "type": "task.request",
   "task_type": "review_pr",
   "payload": {
@@ -462,9 +462,9 @@ agent.agent-main.results
   "status": "completed",
   "task": {
     "id": "task-20260518-0001",
-    "from": "agent-main",
-    "to": "agent-code",
-    "reply_to": "agent-main",
+    "from": "main",
+    "to": "coder",
+    "reply_to": "main",
     "type": "task.request",
     "task_type": "review_pr",
     "payload": {

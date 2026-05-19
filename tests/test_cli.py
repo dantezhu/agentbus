@@ -22,7 +22,7 @@ def test_parser_rejects_worker_cli_overrides():
     parser = build_parser()
 
     with pytest.raises(SystemExit):
-        parser.parse_args(["worker", "run", "--config", "~/.agentbus/config.toml", "--agent-id", "agent-code"])
+        parser.parse_args(["worker", "run", "--config", "~/.agentbus/config.toml", "--agent-id", "coder"])
 
 
 def test_parser_accepts_task_publish_subcommand_with_named_agent_args_and_positional_content():
@@ -32,28 +32,28 @@ def test_parser_accepts_task_publish_subcommand_with_named_agent_args_and_positi
         "task",
         "publish",
         "--nats-url",
-        "tls://agent-main:secret@agentbus.example.com:7422",
+        "tls://main:secret@agentbus.example.com:7422",
         "--to",
-        "agent-code",
+        "coder",
         "--to",
-        "agent-doc",
+        "reviewer",
         "--task-type",
         "ping",
         "hello",
         "--from",
-        "agent-main",
+        "main",
         "--reply-to",
-        "agent-coordinator",
+        "main",
     ])
 
     assert args.command == "task"
     assert args.task_command == "publish"
-    assert args.to_agents == ["agent-code", "agent-doc"]
+    assert args.to_agents == ["coder", "reviewer"]
     assert args.task_type == "ping"
     assert args.content == "hello"
-    assert args.nats_url == "tls://agent-main:secret@agentbus.example.com:7422"
-    assert args.from_agent == "agent-main"
-    assert args.reply_to == "agent-coordinator"
+    assert args.nats_url == "tls://main:secret@agentbus.example.com:7422"
+    assert args.from_agent == "main"
+    assert args.reply_to == "main"
     assert not hasattr(args, "payload_fmt")
     assert not hasattr(args, "task_fmt")
     assert not hasattr(args, "config")
@@ -63,7 +63,7 @@ def test_parser_rejects_task_publish_without_nats_url():
     parser = build_parser()
 
     with pytest.raises(SystemExit):
-        parser.parse_args(["task", "publish", "--to", "agent-code", "--task-type", "ping", "hello"])
+        parser.parse_args(["task", "publish", "--to", "coder", "--task-type", "ping", "hello"])
 
 
 def test_parser_rejects_task_publish_without_named_target_or_task_type():
@@ -74,8 +74,8 @@ def test_parser_rejects_task_publish_without_named_target_or_task_type():
             "task",
             "publish",
             "--nats-url",
-            "tls://agent-main:secret@agentbus.example.com:7422",
-            "agent-code",
+            "tls://main:secret@agentbus.example.com:7422",
+            "coder",
             "ping",
             "hello",
         ])
@@ -99,9 +99,9 @@ def test_parser_rejects_removed_task_publish_options():
                 "task",
                 "publish",
                 "--nats-url",
-                "tls://agent-main:secret@agentbus.example.com:7422",
+                "tls://main:secret@agentbus.example.com:7422",
                 "--to",
-                "agent-code",
+                "coder",
                 "--task-type",
                 "ping",
                 option,
@@ -114,7 +114,7 @@ def test_parser_rejects_task_publish_config_file():
     parser = build_parser()
 
     with pytest.raises(SystemExit):
-        parser.parse_args(["task", "publish", "--config", "~/.agentbus/main.toml", "--to", "agent-code", "--task-type", "ping", "hello"])
+        parser.parse_args(["task", "publish", "--config", "~/.agentbus/main.toml", "--to", "coder", "--task-type", "ping", "hello"])
 
 
 def test_parser_rejects_removed_task_fmt_option():
@@ -125,9 +125,9 @@ def test_parser_rejects_removed_task_fmt_option():
             "task",
             "publish",
             "--nats-url",
-            "tls://agent-main:secret@agentbus.example.com:7422",
+            "tls://main:secret@agentbus.example.com:7422",
             "--to",
-            "agent-code",
+            "coder",
             "--task-type",
             "ping",
             "--task-fmt",
@@ -143,9 +143,9 @@ def test_parser_accepts_result_get_with_same_limit_for_watch_and_non_watch():
         "result",
         "get",
         "--nats-url",
-        "tls://agent-main:secret@agentbus.example.com:7422",
+        "tls://main:secret@agentbus.example.com:7422",
         "--agent",
-        "agent-main",
+        "main",
         "--limit",
         "20",
         "--watch",
@@ -153,8 +153,8 @@ def test_parser_accepts_result_get_with_same_limit_for_watch_and_non_watch():
 
     assert args.command == "result"
     assert args.result_command == "get"
-    assert args.nats_url == "tls://agent-main:secret@agentbus.example.com:7422"
-    assert args.agent == "agent-main"
+    assert args.nats_url == "tls://main:secret@agentbus.example.com:7422"
+    assert args.agent == "main"
     assert args.limit == 20
     assert args.watch is True
     assert not hasattr(args, "ack")
@@ -168,9 +168,9 @@ def test_parser_rejects_result_get_ack_option():
             "result",
             "get",
             "--nats-url",
-            "tls://agent-main:secret@agentbus.example.com:7422",
+            "tls://main:secret@agentbus.example.com:7422",
             "--agent",
-            "agent-main",
+            "main",
             "--ack",
         ])
 

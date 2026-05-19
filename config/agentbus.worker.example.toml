@@ -7,7 +7,7 @@
 #   agentbus worker run --config /path/to/config.toml
 
 [agent]
-id = "agent-code"
+id = "coder"
 # Required. Must be a TOML array of strings. String-form commands are rejected
 # so the generated multi-line prompt replaces one argv argument exactly.
 chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
@@ -26,10 +26,10 @@ max_reconnect_attempts = -1
 [nats]
 url = "tls://username:password@agentbus.example.com:7422"
 stream = "AGENT_TASKS"
-task_subject = "agent.agent-code.tasks"
-default_result_subject = "agent.agent-main.results"
+task_subject = "agentbus.coder.tasks"
+default_result_subject = "agentbus.main.results"
 # Durable consumer name. Keep stable per worker identity so NATS remembers ack/progress.
-durable = "agent-code"
+durable = "coder"
 
 [log]
 dir = "~/.agentbus/logs"

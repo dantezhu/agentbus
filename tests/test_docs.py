@@ -23,7 +23,7 @@ def test_readme_documents_nats_server_source_and_install_steps():
     assert "https://docs.nats.io/running-a-nats-service/introduction/installation" in readme
     assert "nats-server -c /etc/nats-server.conf" in readme
     assert "nats-server -c /etc/nats/agentbus.conf" in readme
-    assert "nats --server 'tls://agent-main:agent_main_password@agentbus.example.com:7422' stream ls" in readme
+    assert "nats --server 'tls://main:main_password@agentbus.example.com:7422' stream ls" in readme
 
 
 def test_readme_and_example_document_chat_cmd_input_placeholder_and_hermes():

@@ -7,7 +7,7 @@ from agentbus.messages import TaskMessage, build_agent_prompt, build_result_mess
 
 def test_load_task_requires_core_fields():
     with pytest.raises(ValueError) as exc:
-        load_task(json.dumps({"id": "t1", "from": "agent-main"}))
+        load_task(json.dumps({"id": "t1", "from": "main"}))
 
     assert "missing required fields" in str(exc.value)
     assert "to" in str(exc.value)
@@ -17,17 +17,17 @@ def test_load_task_requires_core_fields():
 def test_build_agent_prompt_includes_payload_and_safety_boundary():
     task = TaskMessage(
         id="task-1",
-        from_agent="agent-main",
-        to="agent-code",
+        from_agent="main",
+        to="coder",
         type="task.request",
         task_type="review_pr",
         payload={"repo": "demo", "pr": 12},
-        reply_to="agent-coordinator",
+        reply_to="main",
     )
 
-    prompt = build_agent_prompt(task, agent_id="agent-code", extra_instruction="Be concise.")
+    prompt = build_agent_prompt(task, agent_id="coder", extra_instruction="Be concise.")
 
-    assert "agent-code" in prompt
+    assert "coder" in prompt
     assert "Task type: review_pr" in prompt
     assert '"pr": 12' in prompt
     assert "needs_approval" in prompt
@@ -38,28 +38,28 @@ def test_build_agent_prompt_includes_payload_and_safety_boundary():
 def test_build_result_message_embeds_task_context_without_duplicate_routing_fields():
     task = TaskMessage(
         id="task-1",
-        from_agent="agent-main",
-        to="agent-code",
+        from_agent="main",
+        to="coder",
         type="task.request",
         task_type="ping",
         payload={"content": "hello"},
-        reply_to="agent-coordinator",
+        reply_to="main",
         created_at="2026-05-18T00:00:00+00:00",
     )
 
-    result = build_result_message(task, agent_id="agent-code", status="completed", result="pong")
+    result = build_result_message(task, agent_id="coder", status="completed", result="pong")
 
     assert result["type"] == "task.result"
     assert result["status"] == "completed"
     assert result["result"] == "pong"
     assert result["task"] == {
         "id": "task-1",
-        "from": "agent-main",
-        "to": "agent-code",
+        "from": "main",
+        "to": "coder",
         "type": "task.request",
         "task_type": "ping",
         "payload": {"content": "hello"},
-        "reply_to": "agent-coordinator",
+        "reply_to": "main",
         "created_at": "2026-05-18T00:00:00+00:00",
     }
     assert "request_id" not in result

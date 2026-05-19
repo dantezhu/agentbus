@@ -10,7 +10,7 @@ fi
 nats_url="$1"
 
 nats --server "$nats_url" stream add AGENT_TASKS \
-  --subjects 'agent.*.tasks' \
+  --subjects 'agentbus.*.tasks' \
   --storage file \
   --retention limits \
   --discard old \
@@ -19,7 +19,7 @@ nats --server "$nats_url" stream add AGENT_TASKS \
   --defaults
 
 nats --server "$nats_url" stream add AGENT_RESULTS \
-  --subjects 'agent.*.results' \
+  --subjects 'agentbus.*.results' \
   --storage file \
   --retention limits \
   --discard old \

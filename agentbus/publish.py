@@ -17,11 +17,11 @@ def require_agent_id(agent_id: str) -> str:
 
 
 def build_task_subject(target_agent: str) -> str:
-    return f"agent.{require_agent_id(target_agent)}.tasks"
+    return f"agentbus.{require_agent_id(target_agent)}.tasks"
 
 
 def build_result_subject(agent_id: str) -> str:
-    return f"agent.{require_agent_id(agent_id)}.results"
+    return f"agentbus.{require_agent_id(agent_id)}.results"
 
 
 def build_payload(content: str) -> dict[str, Any]:

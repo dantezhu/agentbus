@@ -15,7 +15,7 @@ class WorkerConfig:
     stream: str = "AGENT_TASKS"
     durable: str | None = None
     task_subject: str | None = None
-    default_result_subject: str = "agent.agent-main.results"
+    default_result_subject: str = "agentbus.main.results"
     task_timeout_seconds: int = 1800
     extra_instruction: str = ""
     log_dir: str = "~/.agentbus/logs"
@@ -117,7 +117,7 @@ def find_default_config_file() -> Path | None:
 def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
     defaults = {
         "stream": "AGENT_TASKS",
-        "default_result_subject": "agent.agent-main.results",
+        "default_result_subject": "agentbus.main.results",
         "task_timeout_seconds": 1800,
         "extra_instruction": "",
         "log_dir": str(DEFAULT_LOG_DIR),
@@ -162,7 +162,7 @@ def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
         agent_chat_cmd=normalize_agent_chat_cmd(merged["agent_chat_cmd"]),
         stream=str(merged["stream"]),
         durable=str(durable) if durable else agent_id,
-        task_subject=str(task_subject) if task_subject else f"agent.{agent_id}.tasks",
+        task_subject=str(task_subject) if task_subject else f"agentbus.{agent_id}.tasks",
         default_result_subject=str(merged["default_result_subject"]),
         task_timeout_seconds=int(merged["task_timeout_seconds"]),
         extra_instruction=str(merged["extra_instruction"]),
