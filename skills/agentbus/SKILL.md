@@ -16,7 +16,7 @@ metadata:
 Use this skill when an agent needs to:
 
 - send an asynchronous task to another agent;
-- inspect results from `agent.main.results` or `agent.<id>.results`;
+- inspect results from `agent.agent-main.results` or `agent.<id>.results`;
 - troubleshoot NATS/JetStream routing for AgentBus.
 
 ## Core model
@@ -41,10 +41,12 @@ For public deployments, prefer a domain and TLS URL such as `tls://username:pass
 
 ## Subject convention
 
+Agent IDs are used literally in subjects. AgentBus does not strip or add prefixes such as `agent-`.
+
 ```text
 agent.<agent_id>.tasks
 agent.<agent_id>.results
-agent.main.results
+agent.agent-main.results
 agent.<agent_id>.heartbeat
 ```
 
@@ -53,10 +55,10 @@ agent.<agent_id>.heartbeat
 ```bash
 agentbus task publish \
   --nats-url 'tls://username:password@agentbus.example.com:7422' \
-  --to code \
-  --to doc \
-  --from main \
-  --reply-to main \
+  --to agent-code \
+  --to agent-doc \
+  --from agent-main \
+  --reply-to agent-main \
   --task-type ping \
   'hello'
 ```
@@ -69,7 +71,7 @@ JSON-like text example:
 ```bash
 agentbus task publish \
   --nats-url 'tls://username:password@agentbus.example.com:7422' \
-  --to code \
+  --to agent-code \
   --task-type batch \
   '[{"url":"https://example.com"}]'
 ```
@@ -77,7 +79,7 @@ agentbus task publish \
 Equivalent direct publish:
 
 ```bash
-nats --server 'tls://username:password@agentbus.example.com:7422' pub agent.code.tasks '{
+nats --server 'tls://username:password@agentbus.example.com:7422' pub agent.agent-code.tasks '{
   "id":"task-001",
   "from":"agent-main",
   "to":"agent-code",
@@ -93,7 +95,7 @@ nats --server 'tls://username:password@agentbus.example.com:7422' pub agent.code
 ```bash
 agentbus result get \
   --nats-url 'tls://username:password@agentbus.example.com:7422' \
-  --agent main
+  --agent agent-main
 ```
 
 `--limit` means read the latest N stored results first. The meaning is the same with and without `--watch`.
@@ -103,7 +105,7 @@ Results are worker-generated execution records, not the primary agent-to-agent r
 ```bash
 agentbus result get \
   --nats-url 'tls://username:password@agentbus.example.com:7422' \
-  --agent main \
+  --agent agent-main \
   --limit 20 \
   --watch
 ```
@@ -118,7 +120,7 @@ Default user config path:
 
 ```toml
 [agent]
-id = "code"
+id = "agent-code"
 chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 
 [worker]
@@ -130,8 +132,8 @@ max_reconnect_attempts = -1
 [nats]
 url = "tls://username:password@agentbus.example.com:7422"
 stream = "AGENT_TASKS"
-task_subject = "agent.code.tasks"
-default_result_subject = "agent.main.results"
+task_subject = "agent.agent-code.tasks"
+default_result_subject = "agent.agent-main.results"
 # Stable JetStream durable consumer name for this worker identity.
 durable = "agent-code"
 

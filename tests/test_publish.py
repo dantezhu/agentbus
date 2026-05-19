@@ -8,9 +8,9 @@ from agentbus.publish import build_task_message, publish_task, publish_tasks
 
 def test_build_task_message_uses_agent_level_arguments_only():
     message = build_task_message(
-        from_agent="main",
-        target_agent="code",
-        reply_to="coordinator",
+        from_agent="agent-main",
+        target_agent="agent-code",
+        reply_to="agent-coordinator",
         task_type="ping",
         content="hello",
     )
@@ -29,8 +29,8 @@ def test_build_task_message_uses_agent_level_arguments_only():
 
 def test_build_task_message_stores_content_as_string_without_payload_format():
     message = build_task_message(
-        from_agent="main",
-        target_agent="code",
+        from_agent="agent-main",
+        target_agent="agent-code",
         task_type="ping",
         content='[1, {"ok": true}]',
     )
@@ -40,8 +40,8 @@ def test_build_task_message_stores_content_as_string_without_payload_format():
 
 def test_build_task_message_defaults_reply_to_to_sender():
     message = build_task_message(
-        from_agent="main",
-        target_agent="code",
+        from_agent="agent-main",
+        target_agent="agent-code",
         task_type="ping",
         content="hello",
     )
@@ -52,8 +52,8 @@ def test_build_task_message_defaults_reply_to_to_sender():
 def test_build_task_message_rejects_empty_content():
     with pytest.raises(ValueError, match="content is required"):
         build_task_message(
-            from_agent="main",
-            target_agent="code",
+            from_agent="agent-main",
+            target_agent="agent-code",
             task_type="ping",
             content="",
         )
@@ -67,11 +67,11 @@ def test_publish_task_publishes_to_derived_subject_with_explicit_nats_url():
 
     message = asyncio.run(publish_task(
         nats_url="tls://agent-main:secret@agentbus.example.com:7422",
-        target_agent="code",
+        target_agent="agent-code",
         task_type="ping",
         content="hello",
-        from_agent="main",
-        reply_to="coordinator",
+        from_agent="agent-main",
+        reply_to="agent-coordinator",
         publisher=fake_publisher,
     ))
 
@@ -80,7 +80,7 @@ def test_publish_task_publishes_to_derived_subject_with_explicit_nats_url():
     assert published == [
         (
             "tls://agent-main:secret@agentbus.example.com:7422",
-            "agent.code.tasks",
+            "agent.agent-code.tasks",
             message,
         )
     ]
@@ -94,16 +94,16 @@ def test_publish_tasks_publishes_one_message_per_target_agent():
 
     messages = asyncio.run(publish_tasks(
         nats_url="tls://agent-main:secret@agentbus.example.com:7422",
-        target_agents=["code", "doc"],
+        target_agents=["agent-code", "agent-doc"],
         task_type="ping",
         content="hello",
-        from_agent="main",
-        reply_to="coordinator",
+        from_agent="agent-main",
+        reply_to="agent-coordinator",
         publisher=fake_publisher,
     ))
 
     assert [message["to"] for message in messages] == ["agent-code", "agent-doc"]
     assert [message["id"] for message in messages][0] != [message["id"] for message in messages][1]
     assert [message["reply_to"] for message in messages] == ["agent-coordinator", "agent-coordinator"]
-    assert [subject for _, subject, _ in published] == ["agent.code.tasks", "agent.doc.tasks"]
+    assert [subject for _, subject, _ in published] == ["agent.agent-code.tasks", "agent.agent-doc.tasks"]
     assert [payload for _, _, payload in published] == messages

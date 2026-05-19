@@ -32,12 +32,12 @@ class DummyPublisher:
 
 def make_config():
     return WorkerConfig(
-        agent_id="code",
+        agent_id="agent-code",
         nats_url="nats://example:4222",
         agent_chat_cmd=["agent-cli", "chat", "--oneshot", "{input}"],
         durable="agent-code",
-        task_subject="agent.code.tasks",
-        default_result_subject="agent.main.results",
+        task_subject="agent.agent-code.tasks",
+        default_result_subject="agent.agent-main.results",
     )
 
 
@@ -56,7 +56,7 @@ def test_handle_message_success_publishes_result_and_acks():
 
     async def runner(prompt, config):
         assert "ping" in prompt
-        assert config.agent_id == "code"
+        assert config.agent_id == "agent-code"
         return ProcessResult(returncode=0, stdout="pong\n", stderr="")
 
     async def scenario():
@@ -66,7 +66,7 @@ def test_handle_message_success_publishes_result_and_acks():
     asyncio.run(scenario())
 
     assert msg.acked is True
-    assert publisher.published[0][0] == "agent.main.results"
+    assert publisher.published[0][0] == "agent.agent-main.results"
     result = publisher.published[0][1]
     assert result["status"] == "completed"
     assert result["result"] == "pong"
@@ -102,7 +102,7 @@ def test_handle_message_failed_agent_run_publishes_failed_result_and_acks():
     asyncio.run(scenario())
 
     assert msg.acked is True
-    assert publisher.published[0][0] == "agent.main.results"
+    assert publisher.published[0][0] == "agent.agent-main.results"
     result = publisher.published[0][1]
     assert result["status"] == "failed"
     assert result["error"] == "boom"
@@ -146,7 +146,7 @@ def test_run_agent_chat_uses_configured_command(monkeypatch):
 
 def test_build_agent_command_replaces_input_placeholder_without_forcing_last_arg():
     config = WorkerConfig(
-        agent_id="code",
+        agent_id="agent-code",
         nats_url="nats://example:4222",
         agent_chat_cmd=["agent-cli", "run", "--prompt", "{input}", "--json"],
     )

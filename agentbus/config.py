@@ -15,7 +15,7 @@ class WorkerConfig:
     stream: str = "AGENT_TASKS"
     durable: str | None = None
     task_subject: str | None = None
-    default_result_subject: str = "agent.main.results"
+    default_result_subject: str = "agent.agent-main.results"
     task_timeout_seconds: int = 1800
     extra_instruction: str = ""
     log_dir: str = "~/.agentbus/logs"
@@ -117,7 +117,7 @@ def find_default_config_file() -> Path | None:
 def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
     defaults = {
         "stream": "AGENT_TASKS",
-        "default_result_subject": "agent.main.results",
+        "default_result_subject": "agent.agent-main.results",
         "task_timeout_seconds": 1800,
         "extra_instruction": "",
         "log_dir": str(DEFAULT_LOG_DIR),

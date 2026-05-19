@@ -9,19 +9,19 @@ from .messages import dump_json
 PublisherFn = Callable[[str, str, bytes], Awaitable[None]]
 
 
-def normalize_agent_id(agent_id: str) -> str:
+def require_agent_id(agent_id: str) -> str:
     agent = agent_id.strip()
     if not agent:
         raise ValueError("agent id is required")
-    return agent.removeprefix("agent-")
+    return agent
 
 
 def build_task_subject(target_agent: str) -> str:
-    return f"agent.{normalize_agent_id(target_agent)}.tasks"
+    return f"agent.{require_agent_id(target_agent)}.tasks"
 
 
 def build_result_subject(agent_id: str) -> str:
-    return f"agent.{normalize_agent_id(agent_id)}.results"
+    return f"agent.{require_agent_id(agent_id)}.results"
 
 
 def build_payload(content: str) -> dict[str, Any]:
@@ -41,17 +41,17 @@ def build_task_message(
     if not task_type.strip():
         raise ValueError("task_type is required")
 
-    target = normalize_agent_id(target_agent)
-    sender = normalize_agent_id(from_agent)
-    reply_agent = normalize_agent_id(reply_to or sender)
+    target = require_agent_id(target_agent)
+    sender = require_agent_id(from_agent)
+    reply_agent = require_agent_id(reply_to or sender)
     return {
         "id": f"task-{uuid.uuid4()}",
-        "from": f"agent-{sender}",
-        "to": f"agent-{target}",
+        "from": sender,
+        "to": target,
         "type": "task.request",
         "task_type": task_type,
         "payload": build_payload(content),
-        "reply_to": f"agent-{reply_agent}",
+        "reply_to": reply_agent,
     }
 
 
@@ -78,7 +78,7 @@ async def publish_task(
 ) -> dict[str, Any]:
     if not nats_url:
         raise ValueError("nats_url is required")
-    target = normalize_agent_id(target_agent)
+    target = require_agent_id(target_agent)
     message = build_task_message(
         from_agent=from_agent,
         target_agent=target,
@@ -100,7 +100,7 @@ async def publish_tasks(
     reply_to: str | None = None,
     publisher: PublisherFn = nats_publisher,
 ) -> list[dict[str, Any]]:
-    targets = [normalize_agent_id(target) for target in target_agents]
+    targets = [require_agent_id(target) for target in target_agents]
     if not targets:
         raise ValueError("at least one target agent is required")
 

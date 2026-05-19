@@ -25,10 +25,10 @@ class FakeStoredMessage:
 class FakeJetStream:
     def __init__(self):
         self.messages = {
-            1: FakeStoredMessage("agent.main.results", {"id": "old"}),
-            2: FakeStoredMessage("agent.code.results", {"id": "other"}),
-            3: FakeStoredMessage("agent.main.results", {"id": "newer"}),
-            4: FakeStoredMessage("agent.main.results", {"id": "newest"}),
+            1: FakeStoredMessage("agent.agent-main.results", {"id": "old"}),
+            2: FakeStoredMessage("agent.agent-code.results", {"id": "other"}),
+            3: FakeStoredMessage("agent.agent-main.results", {"id": "newer"}),
+            4: FakeStoredMessage("agent.agent-main.results", {"id": "newest"}),
         }
 
     async def stream_info(self, stream):
@@ -71,19 +71,19 @@ class FakeNats:
         self.drained = True
 
 
-def test_build_result_subject_normalizes_agent_prefix():
+def test_build_result_subject_uses_agent_id_literally():
     assert build_result_subject("main") == "agent.main.results"
-    assert build_result_subject("agent-main") == "agent.main.results"
+    assert build_result_subject("agent-main") == "agent.agent-main.results"
 
 
 @pytest.mark.parametrize("limit", [0, -1])
 def test_collect_recent_results_rejects_non_positive_limit(limit):
     with pytest.raises(ValueError, match="limit must be positive"):
-        asyncio.run(collect_recent_results(FakeJetStream(), "agent.main.results", limit=limit))
+        asyncio.run(collect_recent_results(FakeJetStream(), "agent.agent-main.results", limit=limit))
 
 
 def test_collect_recent_results_returns_recent_n_for_subject_in_chronological_order():
-    results = asyncio.run(collect_recent_results(FakeJetStream(), "agent.main.results", limit=2))
+    results = asyncio.run(collect_recent_results(FakeJetStream(), "agent.agent-main.results", limit=2))
 
     assert [result["id"] for result in results] == ["newer", "newest"]
 
@@ -98,7 +98,7 @@ def test_read_results_uses_same_limit_before_watch_and_non_watch():
 
     asyncio.run(read_results(
         nats_url="tls://agent-main:secret@agentbus.example.com:7422",
-        agent="main",
+        agent="agent-main",
         limit=2,
         watch=True,
         emit=seen.append,
@@ -106,5 +106,5 @@ def test_read_results_uses_same_limit_before_watch_and_non_watch():
     ))
 
     assert [item["id"] for item in seen] == ["newer", "newest", "live"]
-    assert nc.subscribed_subjects == ["agent.main.results"]
+    assert nc.subscribed_subjects == ["agent.agent-main.results"]
     assert nc.drained is True

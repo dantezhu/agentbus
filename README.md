@@ -127,8 +127,8 @@ The sample config defines three users:
 
 ```text
 agent-main   publishes tasks and subscribes to central results
-agent-code   subscribes to agent.code.tasks and publishes results
-agent-doc    subscribes to agent.doc.tasks and publishes results
+agent-code   subscribes to agent.agent-code.tasks and publishes results
+agent-doc    subscribes to agent.agent-doc.tasks and publishes results
 ```
 
 It also enables JetStream:
@@ -278,7 +278,7 @@ Required worker fields:
 
 ```toml
 [agent]
-id = "code"
+id = "agent-code"
 # {input} is required and marks where AgentBus inserts the generated prompt.
 chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 
@@ -290,7 +290,7 @@ A fuller example:
 
 ```toml
 [agent]
-id = "code"
+id = "agent-code"
 chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 extra_instruction = ""
 
@@ -303,8 +303,8 @@ max_reconnect_attempts = -1
 [nats]
 url = "tls://agent-code:agent_code_password@agentbus.example.com:7422"
 stream = "AGENT_TASKS"
-task_subject = "agent.code.tasks"
-default_result_subject = "agent.main.results"
+task_subject = "agent.agent-code.tasks"
+default_result_subject = "agent.agent-main.results"
 # Durable consumer name. Keep stable per worker identity so NATS remembers ack/progress.
 durable = "agent-code"
 
@@ -354,7 +354,7 @@ Read the latest result in one terminal:
 ```bash
 agentbus result get \
   --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
-  --agent main
+  --agent agent-main
 ```
 
 To keep watching after reading recent history, add `--watch`. `--limit` has the same meaning whether or not `--watch` is set: read the latest N stored results first.
@@ -362,7 +362,7 @@ To keep watching after reading recent history, add `--watch`. `--limit` has the 
 ```bash
 agentbus result get \
   --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
-  --agent main \
+  --agent agent-main \
   --limit 20 \
   --watch
 ```
@@ -372,10 +372,10 @@ Publish a test task in another terminal:
 ```bash
 agentbus task publish \
   --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
-  --to code \
-  --to doc \
-  --from main \
-  --reply-to main \
+  --to agent-code \
+  --to agent-doc \
+  --from agent-main \
+  --reply-to agent-main \
   --task-type ping \
   'hello'
 ```
@@ -392,47 +392,49 @@ Examples:
 ```bash
 agentbus task publish \
   --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
-  --to code \
+  --to agent-code \
   --task-type ping \
   'hello'
 
 agentbus task publish \
   --nats-url 'tls://agent-main:agent_main_password@agentbus.example.com:7422' \
-  --to code \
+  --to agent-code \
   --task-type batch \
   '[{"url":"https://example.com"}]'
 ```
 
-The `--to code` and `--to doc` options map to these task subjects:
+The `--to agent-code` and `--to agent-doc` options map directly to these task subjects:
 
 ```text
-agent.code.tasks
-agent.doc.tasks
+agent.agent-code.tasks
+agent.agent-doc.tasks
 ```
 
-If the target workers are running, `agentbus result get --agent main` should receive `task.result` messages from:
+If the target workers are running, `agentbus result get --agent agent-main` should receive `task.result` messages from:
 
 ```text
-agent.main.results
+agent.agent-main.results
 ```
 
 ## Message subjects
 
 Recommended convention:
 
+Agent IDs are used literally in subjects. AgentBus does not strip or add prefixes such as `agent-`.
+
 ```text
 agent.<agent_id>.tasks       tasks for one worker agent
 agent.<agent_id>.results     optional direct result stream per agent
-agent.main.results           central result subject for the coordinator
+agent.agent-main.results           central result subject for the coordinator
 agent.<agent_id>.heartbeat   optional health events
 ```
 
 Examples:
 
 ```text
-agent.code.tasks
-agent.doc.tasks
-agent.main.results
+agent.agent-code.tasks
+agent.agent-doc.tasks
+agent.agent-main.results
 ```
 
 ## Task message

@@ -15,7 +15,7 @@ def test_load_config_file_supports_grouped_toml_sections(tmp_path):
     config_path.write_text(
         """
 [agent]
-id = "code"
+id = "agent-code"
 chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 extra_instruction = "Keep results concise."
 
@@ -29,8 +29,8 @@ max_reconnect_attempts = -1
 url = "nats://agent-code:secret@example:4222"
 stream = "AGENT_TASKS"
 durable = "agent-code"
-task_subject = "agent.code.tasks"
-default_result_subject = "agent.main.results"
+task_subject = "agent.agent-code.tasks"
+default_result_subject = "agent.agent-main.results"
 
 [log]
 dir = "~/custom-agentbus-logs"
@@ -43,13 +43,13 @@ backup_count = 7
     config = load_config_file(config_path)
 
     assert config == WorkerConfig(
-        agent_id="code",
+        agent_id="agent-code",
         nats_url="nats://agent-code:secret@example:4222",
         agent_chat_cmd=["agent-cli", "chat", "--oneshot", "{input}"],
         stream="AGENT_TASKS",
         durable="agent-code",
-        task_subject="agent.code.tasks",
-        default_result_subject="agent.main.results",
+        task_subject="agent.agent-code.tasks",
+        default_result_subject="agent.agent-main.results",
         task_timeout_seconds=900,
         extra_instruction="Keep results concise.",
         log_dir="~/custom-agentbus-logs",
@@ -95,7 +95,7 @@ def test_agent_chat_cmd_is_required_and_unknown_names_are_rejected(tmp_path):
     missing_cmd.write_text(
         """
 [agent]
-id = "code"
+id = "agent-code"
 
 [nats]
 url = "nats://example:4222"
@@ -108,7 +108,7 @@ url = "nats://example:4222"
     old_name.write_text(
         """
 [agent]
-id = "code"
+id = "agent-code"
 chat_cmd = ["agent-cli", "{input}"]
 old_cmd = "some-cmd"
 
@@ -125,7 +125,7 @@ def test_agent_chat_cmd_must_be_list_of_strings(tmp_path):
     config_path.write_text(
         """
 [agent]
-id = "code"
+id = "agent-code"
 chat_cmd = "agent-cli chat --oneshot {input}"
 
 [nats]
@@ -142,7 +142,7 @@ def test_agent_chat_cmd_must_include_input_placeholder(tmp_path):
     config_path.write_text(
         """
 [agent]
-id = "code"
+id = "agent-code"
 chat_cmd = ["agent-cli", "chat", "--oneshot"]
 
 [nats]
@@ -165,7 +165,7 @@ def test_config_from_sources_requires_config_file_when_default_is_absent(tmp_pat
 def test_example_worker_config_uses_grouped_sections_and_loads():
     config = load_config_file(Path("config/agentbus.worker.example.toml"))
 
-    assert config.agent_id == "code"
+    assert config.agent_id == "agent-code"
     assert config.nats_url == "tls://username:password@agentbus.example.com:7422"
     assert config.agent_chat_cmd == ["agent-cli", "chat", "--oneshot", "{input}"]
     assert config.log_dir == "~/.agentbus/logs"
