@@ -1,6 +1,8 @@
 import asyncio
 import json
 
+import pytest
+
 from agentbus.config import WorkerConfig
 from agentbus.worker import AgentBusWorker, ProcessResult, build_agent_command, run_agent_chat
 
@@ -158,3 +160,32 @@ def test_build_agent_command_replaces_input_placeholder_without_forcing_last_arg
         "hello world",
         "--json",
     )
+
+
+def test_run_forever_closes_nats_connection_when_cancelled():
+    class FakeNatsConnection:
+        def __init__(self):
+            self.drained = False
+
+        async def drain(self):
+            self.drained = True
+
+    class FakeSubscription:
+        async def fetch(self, count, timeout):
+            raise asyncio.CancelledError
+
+    class FakeJetStream:
+        async def pull_subscribe(self, subject, *, durable, stream):
+            return FakeSubscription()
+
+    async def scenario():
+        worker = AgentBusWorker(make_config())
+        worker._nc = FakeNatsConnection()
+        worker._js = FakeJetStream()
+
+        with pytest.raises(asyncio.CancelledError):
+            await worker.run_forever()
+
+        return worker._nc.drained
+
+    assert asyncio.run(scenario()) is True

@@ -46,8 +46,9 @@ class FakeLiveMessage:
 
 
 class FakeSubscription:
-    def __init__(self, live_messages):
+    def __init__(self, live_messages, *, cancel_after_messages: bool = False):
         self.live_messages = list(live_messages)
+        self.cancel_after_messages = cancel_after_messages
 
     @property
     def messages(self):
@@ -56,20 +57,22 @@ class FakeSubscription:
     async def _messages(self):
         for message in self.live_messages:
             yield message
-
+        if self.cancel_after_messages:
+            raise asyncio.CancelledError
 
 class FakeNats:
-    def __init__(self):
+    def __init__(self, *, cancel_watch: bool = False):
         self.jetstream_context = FakeJetStream()
         self.subscribed_subjects = []
         self.drained = False
+        self.cancel_watch = cancel_watch
 
     def jetstream(self):
         return self.jetstream_context
 
     async def subscribe(self, subject):
         self.subscribed_subjects.append(subject)
-        return FakeSubscription([FakeLiveMessage({"id": "live"})])
+        return FakeSubscription([FakeLiveMessage({"id": "live"})], cancel_after_messages=self.cancel_watch)
 
     async def drain(self):
         self.drained = True
@@ -111,4 +114,25 @@ def test_read_results_uses_same_limit_before_watch_and_non_watch():
 
     assert [item["id"] for item in seen] == ["newer", "newest", "live"]
     assert nc.subscribed_subjects == ["agentbus.main.results"]
+    assert nc.drained is True
+
+
+def test_read_results_drains_connection_when_watch_is_cancelled():
+    nc = FakeNats(cancel_watch=True)
+    seen = []
+
+    async def fake_connect(server_url):
+        return nc
+
+    with pytest.raises(asyncio.CancelledError):
+        asyncio.run(read_results(
+            server_url="nats://main:secret@agentbus.example.com:7422",
+            agent="main",
+            limit=1,
+            watch=True,
+            emit=seen.append,
+            connect=fake_connect,
+        ))
+
+    assert [item["id"] for item in seen] == ["newest", "live"]
     assert nc.drained is True

@@ -121,12 +121,13 @@ class AgentBusWorker:
         durable = self.config.consumer_name
         logger.info("AgentBus worker starting: subject=%s durable=%s stream=%s", subject, durable, self.config.stream)
         sub = await self._js.pull_subscribe(subject, durable=durable, stream=self.config.stream)
-        while True:
-            try:
-                messages = await sub.fetch(1, timeout=5)
-            except TimeoutError:
-                continue
-            except asyncio.TimeoutError:
-                continue
-            for msg in messages:
-                await self.handle_message(msg)
+        try:
+            while True:
+                try:
+                    messages = await sub.fetch(1, timeout=5)
+                except (TimeoutError, asyncio.TimeoutError):
+                    continue
+                for msg in messages:
+                    await self.handle_message(msg)
+        finally:
+            await self.close()

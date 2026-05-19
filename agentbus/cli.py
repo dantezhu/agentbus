@@ -5,13 +5,24 @@ import asyncio
 import json
 import logging
 import sys
+from collections.abc import Callable
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from typing import TypeVar
 
 from .config import build_config
 from .publish import publish_tasks
 from .result import read_results
 from .worker import AgentBusWorker
+
+T = TypeVar("T")
+
+
+def run_interruptibly(parser: argparse.ArgumentParser, operation: Callable[[], T]) -> T:
+    try:
+        return operation()
+    except KeyboardInterrupt:
+        parser.exit(130)
 
 
 def add_worker_arguments(parser: argparse.ArgumentParser) -> None:
@@ -119,13 +130,13 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
     try:
         if args.command == "worker" and args.worker_command == "run":
-            run_worker(args)
+            run_interruptibly(parser, lambda: run_worker(args))
             return
         if args.command == "task" and args.task_command == "publish":
-            asyncio.run(run_task_publish(args))
+            run_interruptibly(parser, lambda: asyncio.run(run_task_publish(args)))
             return
         if args.command == "result" and args.result_command == "get":
-            asyncio.run(run_result_get(args))
+            run_interruptibly(parser, lambda: asyncio.run(run_result_get(args)))
             return
     except Exception as exc:
         parser.exit(1, f"agentbus: error: {exc}\n")

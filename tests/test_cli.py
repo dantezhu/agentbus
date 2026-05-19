@@ -3,6 +3,7 @@ from logging.handlers import RotatingFileHandler
 
 import pytest
 
+from agentbus import cli
 from agentbus.cli import build_parser, configure_logging
 
 
@@ -190,3 +191,17 @@ def test_configure_logging_creates_default_log_file_in_log_dir(tmp_path):
     file_handlers = [handler for handler in logging.getLogger().handlers if isinstance(handler, RotatingFileHandler)]
     assert file_handlers[0].maxBytes == 100
     assert file_handlers[0].backupCount == 2
+
+
+def test_run_interruptibly_exits_130_without_traceback(capsys):
+    parser = build_parser()
+
+    def interrupted_operation():
+        raise KeyboardInterrupt
+
+    with pytest.raises(SystemExit) as excinfo:
+        cli.run_interruptibly(parser, interrupted_operation)
+
+    captured = capsys.readouterr()
+    assert excinfo.value.code == 130
+    assert "Traceback" not in captured.err
