@@ -385,12 +385,16 @@ agentbus task publish \
   'hello'
 ```
 
-Publishing is intentionally configured with CLI arguments instead of a TOML file. Unlike the worker, it is a short one-shot command with only a few options.
-Only the task content is positional; agent routing and task metadata are named options so the command remains readable.
-Repeat `--to` to publish the same task content to multiple agents. AgentBus sends one task message per target.
-`--task-type` is optional and defaults to `default`; pass it when you want to classify the work. The final positional argument is the task content.
-`--reply-to` is an agent id, like `--from` and `--to`. It controls which agent result inbox receives the worker execution record; when omitted, it defaults to `--from`. AgentBus derives the result subject internally as `agentbus.<reply_to>.results`.
-The positional content is stored as a plain string at `payload.content`. If you want to send JSON-like data through the CLI, pass it as text and let the receiving agent interpret it.
+Publishing uses CLI arguments instead of a TOML file because it is a short one-shot command.
+
+| Argument | Required | Meaning |
+| --- | --- | --- |
+| `--server-url` | yes | NATS server URL. |
+| `--to` | yes | Target agent id. Repeat it to publish the same content to multiple agents; AgentBus sends one task message per target. |
+| `content` | yes | Final positional argument. Stored as a plain string at `payload.content`; pass JSON-like data as text and let the receiving agent interpret it. |
+| `--from` | no, defaults to `main` | Sender agent id. |
+| `--reply-to` | no, defaults to `--from` | Agent id whose result inbox receives the worker execution record. AgentBus derives `agentbus.<reply_to>.results`. |
+| `--task-type` | no, defaults to `default` | Optional work classification. |
 
 Examples:
 

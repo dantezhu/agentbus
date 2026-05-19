@@ -70,9 +70,14 @@ agentbus task publish \
   'hello'
 ```
 
-Repeat `--to` to send the same content to multiple agents. AgentBus publishes one task message per target agent. `--reply-to` is an agent id, like `--from` and `--to`; it controls which agent result inbox receives the worker execution record. When omitted, it defaults to `--from`, and AgentBus derives the result subject internally as `agentbus.<reply_to>.results`.
-`--task-type` is optional and defaults to `default`; pass it when you want to classify the work.
-The positional content is stored as a plain string at `payload.content`. If you need JSON-like content, pass it as text and let the receiving agent interpret it.
+| Argument | Required | Meaning |
+| --- | --- | --- |
+| `--server-url` | yes | Shared server URL, usually `"$AGENTBUS_SERVER_URL"`. |
+| `--to` | yes | Target agent id. Repeat it to send the same content to multiple agents; AgentBus publishes one task message per target. |
+| `content` | yes | Final positional argument. Stored as a plain string at `payload.content`; pass JSON-like data as text and let the receiving agent interpret it. |
+| `--from` | no, defaults to `main` | Sender agent id. |
+| `--reply-to` | no, defaults to `--from` | Agent id whose result inbox receives the worker execution record. AgentBus derives `agentbus.<reply_to>.results`. |
+| `--task-type` | no, defaults to `default` | Optional work classification. |
 
 JSON-like text example:
 
