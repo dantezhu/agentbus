@@ -211,5 +211,5 @@ def test_run_forever_derives_subject_and_durable_from_agent_id():
         return worker._js.calls
 
     assert asyncio.run(scenario()) == [
-        {"subject": "agentbus.coder.tasks", "durable": "coder", "stream": "AGENT_TASKS"}
+        {"subject": "agentbus.coder.tasks", "durable": "coder", "stream": "AGENTBUS_TASKS"}
     ]

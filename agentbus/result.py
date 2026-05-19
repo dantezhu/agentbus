@@ -6,6 +6,8 @@ from typing import Any
 
 from .publish import build_result_subject
 
+RESULT_STREAM = "AGENTBUS_RESULTS"
+
 ConnectFn = Callable[[str], Awaitable[Any]]
 EmitFn = Callable[[dict[str, Any]], None]
 
@@ -22,7 +24,7 @@ async def collect_recent_results(
     subject: str,
     *,
     limit: int = 1,
-    stream: str = "AGENT_RESULTS",
+    stream: str = RESULT_STREAM,
 ) -> list[dict[str, Any]]:
     """Return the latest N stored result messages for subject, oldest first.
 
@@ -63,7 +65,7 @@ async def read_results(
     agent: str,
     limit: int = 1,
     watch: bool = False,
-    stream: str = "AGENT_RESULTS",
+    stream: str = RESULT_STREAM,
     emit: EmitFn = print,
     connect: ConnectFn = _default_connect,
 ) -> None:

@@ -12,7 +12,6 @@ class WorkerConfig:
     agent_id: str
     server_url: str
     agent_chat_cmd: list[str]
-    stream: str = "AGENT_TASKS"
     task_timeout_seconds: int = 1800
     extra_instruction: str = ""
     log_dir: str = "~/.agentbus/logs"
@@ -46,11 +45,8 @@ SECTION_FIELD_MAP = {
         "chat_cmd": "agent_chat_cmd",
         "extra_instruction": "extra_instruction",
     },
-    "nats": {
-        "url": "server_url",
-        "stream": "stream",
-    },
     "worker": {
+        "server_url": "server_url",
         "task_timeout_seconds": "task_timeout_seconds",
         "max_task_bytes": "max_task_bytes",
         "reconnect_time_wait_seconds": "reconnect_time_wait_seconds",
@@ -114,7 +110,6 @@ def find_default_config_file() -> Path | None:
 
 def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
     defaults = {
-        "stream": "AGENT_TASKS",
         "task_timeout_seconds": 1800,
         "extra_instruction": "",
         "log_dir": str(DEFAULT_LOG_DIR),
@@ -127,7 +122,6 @@ def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
     allowed_fields = {
         "agent_id",
         "server_url",
-        "stream",
         "agent_chat_cmd",
         "task_timeout_seconds",
         "extra_instruction",
@@ -152,7 +146,6 @@ def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
         agent_id=agent_id,
         server_url=str(merged["server_url"]),
         agent_chat_cmd=normalize_agent_chat_cmd(merged["agent_chat_cmd"]),
-        stream=str(merged["stream"]),
         task_timeout_seconds=int(merged["task_timeout_seconds"]),
         extra_instruction=str(merged["extra_instruction"]),
         log_dir=str(merged["log_dir"]),

@@ -20,14 +20,11 @@ chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 extra_instruction = "Keep results concise."
 
 [worker]
+server_url = "nats://coder:secret@example:4222"
 task_timeout_seconds = 900
 max_task_bytes = 2048
 reconnect_time_wait_seconds = 3
 max_reconnect_attempts = -1
-
-[nats]
-url = "nats://coder:secret@example:4222"
-stream = "AGENT_TASKS"
 
 [log]
 dir = "~/custom-agentbus-logs"
@@ -43,7 +40,6 @@ backup_count = 7
         agent_id="coder",
         server_url="nats://coder:secret@example:4222",
         agent_chat_cmd=["agent-cli", "chat", "--oneshot", "{input}"],
-        stream="AGENT_TASKS",
         task_timeout_seconds=900,
         extra_instruction="Keep results concise.",
         log_dir="~/custom-agentbus-logs",
@@ -64,11 +60,8 @@ id = "file-agent"
 chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 
 [worker]
+server_url = "nats://file@example:4222"
 task_timeout_seconds = 300
-
-[nats]
-url = "nats://file@example:4222"
-stream = "FILE_STREAM"
 """.strip()
     )
     monkeypatch.setenv("NATS_URL", "nats://env@example:4222")
@@ -78,15 +71,14 @@ stream = "FILE_STREAM"
 
     assert config.agent_id == "file-agent"
     assert config.server_url == "nats://file@example:4222"
-    assert config.stream == "FILE_STREAM"
     assert config.task_subject == "agentbus.file-agent.tasks"
     assert config.consumer_name == "file-agent"
     assert config.agent_chat_cmd == ["agent-cli", "chat", "--oneshot", "{input}"]
     assert config.task_timeout_seconds == 300
 
 
-@pytest.mark.parametrize("field", ["durable", "task_subject", "default_result_subject"])
-def test_nats_routing_fields_are_derived_and_not_configurable(tmp_path, field):
+@pytest.mark.parametrize("field", ["durable", "task_subject", "default_result_subject", "stream"])
+def test_worker_routing_fields_are_derived_and_not_configurable(tmp_path, field):
     config_path = tmp_path / "agentbus.toml"
     config_path.write_text(
         f"""
@@ -94,13 +86,33 @@ def test_nats_routing_fields_are_derived_and_not_configurable(tmp_path, field):
 id = "coder"
 chat_cmd = ["agent-cli", "chat", "--oneshot", "{{input}}"]
 
-[nats]
-url = "nats://coder:secret@example:4222"
+[worker]
+server_url = "nats://coder:secret@example:4222"
 {field} = "custom-value"
 """.strip()
     )
 
     with pytest.raises(ValueError, match=f"unknown config fields: {field}"):
+        load_config_file(config_path)
+
+
+def test_nats_section_is_not_part_of_worker_config(tmp_path):
+    config_path = tmp_path / "agentbus.toml"
+    config_path.write_text(
+        """
+[agent]
+id = "coder"
+chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
+
+[worker]
+server_url = "nats://coder:secret@example:4222"
+
+[nats]
+url = "nats://other@example:4222"
+""".strip()
+    )
+
+    with pytest.raises(ValueError, match="unknown config fields: nats"):
         load_config_file(config_path)
 
 
@@ -111,8 +123,8 @@ def test_agent_chat_cmd_is_required_and_unknown_names_are_rejected(tmp_path):
 [agent]
 id = "coder"
 
-[nats]
-url = "nats://example:4222"
+[worker]
+server_url = "nats://example:4222"
 """.strip()
     )
     with pytest.raises(ValueError, match="agent_chat_cmd"):
@@ -126,8 +138,8 @@ id = "coder"
 chat_cmd = ["agent-cli", "{input}"]
 old_cmd = "some-cmd"
 
-[nats]
-url = "nats://example:4222"
+[worker]
+server_url = "nats://example:4222"
 """.strip()
     )
     with pytest.raises(ValueError, match="unknown config fields: old_cmd"):
@@ -142,8 +154,8 @@ def test_agent_chat_cmd_must_be_list_of_strings(tmp_path):
 id = "coder"
 chat_cmd = "agent-cli chat --oneshot {input}"
 
-[nats]
-url = "nats://example:4222"
+[worker]
+server_url = "nats://example:4222"
 """.strip()
     )
 
@@ -159,8 +171,8 @@ def test_agent_chat_cmd_must_include_input_placeholder(tmp_path):
 id = "coder"
 chat_cmd = ["agent-cli", "chat", "--oneshot"]
 
-[nats]
-url = "nats://example:4222"
+[worker]
+server_url = "nats://example:4222"
 """.strip()
     )
 

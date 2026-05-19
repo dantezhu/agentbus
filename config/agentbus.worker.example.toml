@@ -18,15 +18,12 @@ chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 extra_instruction = ""
 
 [worker]
+# Use tls:// instead if the server TLS block is enabled.
+server_url = "nats://username:password@agentbus.example.com:7422"
 task_timeout_seconds = 1800
 max_task_bytes = 1048576
 reconnect_time_wait_seconds = 2
 max_reconnect_attempts = -1
-
-[nats]
-# Use tls:// instead if the server TLS block is enabled.
-url = "nats://username:password@agentbus.example.com:7422"
-stream = "AGENT_TASKS"
 [log]
 dir = "~/.agentbus/logs"
 max_bytes = 104857600

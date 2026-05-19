@@ -63,6 +63,8 @@ def test_docs_do_not_expose_derived_worker_routing_fields():
         assert "task_subject =" not in text
         assert "default_result_subject =" not in text
         assert "durable =" not in text
+        assert "stream =" not in text
+        assert "[nats]" not in text
 
     assert "task subject" in readme
     assert "result subject" in readme

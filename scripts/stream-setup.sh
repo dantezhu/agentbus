@@ -9,7 +9,7 @@ fi
 
 server_url="$1"
 
-nats --server "$server_url" stream add AGENT_TASKS \
+nats --server "$server_url" stream add AGENTBUS_TASKS \
   --subjects 'agentbus.*.tasks' \
   --storage file \
   --retention limits \
@@ -18,7 +18,7 @@ nats --server "$server_url" stream add AGENT_TASKS \
   --ack \
   --defaults
 
-nats --server "$server_url" stream add AGENT_RESULTS \
+nats --server "$server_url" stream add AGENTBUS_RESULTS \
   --subjects 'agentbus.*.results' \
   --storage file \
   --retention limits \

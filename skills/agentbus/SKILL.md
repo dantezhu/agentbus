@@ -34,7 +34,7 @@ result message published back to NATS
 ## Required local tools
 
 - `nats` CLI configured or installed;
-- a private AgentBus TOML config containing `[nats].url`;
+- a private AgentBus TOML config containing `[worker].server_url`;
 - `agentbus` installed on worker machines.
 
 Examples use the normal server URL form such as `nats://username:password@agentbus.example.com:7422`. For public deployments, prefer enabling TLS on the server and switching client URLs to `tls://...`. The example port is `7422` to avoid the default NATS client port `4222`.
@@ -124,14 +124,11 @@ id = "coder"
 chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 
 [worker]
+server_url = "nats://username:password@agentbus.example.com:7422"
 task_timeout_seconds = 1800
 max_task_bytes = 1048576
 reconnect_time_wait_seconds = 2
 max_reconnect_attempts = -1
-
-[nats]
-url = "nats://username:password@agentbus.example.com:7422"
-stream = "AGENT_TASKS"
 
 [log]
 dir = "~/.agentbus/logs"
@@ -150,7 +147,7 @@ When a task may cause irreversible side effects, external sends, production chan
 ## Troubleshooting
 
 1. Confirm the task subject derived from `[agent].id` is `agentbus.<id>.tasks` and matches the target used by `agentbus task publish --to <id>`.
-2. Confirm the worker can connect to `[nats].url`.
+2. Confirm the worker can connect to `[worker].server_url`.
 3. Confirm NATS user permissions allow subscribe on `agentbus.<id>.tasks` and publish on result subjects.
 4. Confirm TOML `chat_cmd` works locally before starting the worker.
 5. Check worker logs at `~/.agentbus/logs/agentbus-worker.log` for invalid JSON, command timeout, or publish failures.

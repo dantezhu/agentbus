@@ -224,16 +224,16 @@ Use a user with JetStream API permission. In the sample config, `main` has `$JS.
 This creates:
 
 ```text
-AGENT_TASKS     subjects: agentbus.*.tasks    max age: 7d
-AGENT_RESULTS   subjects: agentbus.*.results  max age: 30d
+AGENTBUS_TASKS     subjects: agentbus.*.tasks    max age: 7d
+AGENTBUS_RESULTS   subjects: agentbus.*.results  max age: 30d
 ```
 
 You can inspect the streams with:
 
 ```bash
 nats --server 'nats://main:main_password@agentbus.example.com:7422' stream ls
-nats --server 'nats://main:main_password@agentbus.example.com:7422' stream info AGENT_TASKS
-nats --server 'nats://main:main_password@agentbus.example.com:7422' stream info AGENT_RESULTS
+nats --server 'nats://main:main_password@agentbus.example.com:7422' stream info AGENTBUS_TASKS
+nats --server 'nats://main:main_password@agentbus.example.com:7422' stream info AGENTBUS_RESULTS
 ```
 
 ## 3. Install the worker
@@ -292,9 +292,9 @@ id = "coder"
 # {input} is required and marks where AgentBus inserts the generated prompt.
 chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 
-[nats]
+[worker]
 # Use tls:// instead if the server TLS block is enabled.
-url = "nats://coder:coder_password@agentbus.example.com:7422"
+server_url = "nats://coder:coder_password@agentbus.example.com:7422"
 ```
 
 A fuller example:
@@ -306,15 +306,12 @@ chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 extra_instruction = ""
 
 [worker]
+# Use tls:// instead if the server TLS block is enabled.
+server_url = "nats://coder:coder_password@agentbus.example.com:7422"
 task_timeout_seconds = 1800
 max_task_bytes = 1048576
 reconnect_time_wait_seconds = 2
 max_reconnect_attempts = -1
-
-[nats]
-# Use tls:// instead if the server TLS block is enabled.
-url = "nats://coder:coder_password@agentbus.example.com:7422"
-stream = "AGENT_TASKS"
 
 [log]
 dir = "~/.agentbus/logs"
@@ -323,15 +320,7 @@ backup_count = 5
 
 ```
 
-Worker routing fields are derived, not configured:
-
-```text
-task subject   = agentbus.<agent.id>.tasks
-durable        = <agent.id>
-result subject = agentbus.<task.reply_to or task.from>.results
-```
-
-This keeps worker config aligned with `agentbus task publish`, which also derives task and result subjects from agent ids. Multiple workers with the same `agent.id` are replicas of the same logical agent and share the same durable consumer/progress.
+Worker routing fields and JetStream stream names are derived or fixed, not configured. This keeps worker config aligned with `agentbus task publish`, which also derives task and result subjects from agent ids. Multiple workers with the same `agent.id` are replicas of the same logical agent and share the same durable consumer/progress.
 
 `chat_cmd` must be a TOML array of strings. AgentBus rejects string-form commands so the generated multi-line prompt is always inserted as one explicit argv argument, never shell-parsed.
 
@@ -440,7 +429,7 @@ Agent IDs are used literally in subjects. AgentBus does not strip or add prefixe
 
 ```text
 agentbus.<agent_id>.tasks       tasks for one worker agent
-agentbus.<agent_id>.results     optional direct result stream per agent
+agentbus.<agent_id>.results     optional direct result subject per agent
 agentbus.main.results           central result subject for the coordinator
 agentbus.<agent_id>.heartbeat   optional health events
 ```
@@ -536,7 +525,7 @@ worker crashes before result publish                        → nak if available
 - Restrict each user to only the subjects it needs.
 - Use TLS for public NATS deployments.
 - Keep monitoring/admin ports private.
-- Store config files with `chmod 600` if credentials are embedded in `server_url`.
+- Store config files with `chmod 600` if credentials are embedded in `[worker].server_url`.
 - Do not put tokens, cookies, or authorization headers in task payloads unless strictly necessary.
 - Treat tasks that delete data, send external messages, deploy code, merge PRs, or spend money as approval-required.
 

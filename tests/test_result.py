@@ -32,11 +32,11 @@ class FakeJetStream:
         }
 
     async def stream_info(self, stream):
-        assert stream == "AGENT_RESULTS"
+        assert stream == "AGENTBUS_RESULTS"
         return FakeStreamInfo(last_seq=4)
 
     async def get_msg(self, stream, seq):
-        assert stream == "AGENT_RESULTS"
+        assert stream == "AGENTBUS_RESULTS"
         return self.messages[seq]
 
 

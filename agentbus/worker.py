@@ -11,6 +11,8 @@ from .publish import build_result_subject
 
 logger = logging.getLogger(__name__)
 
+TASK_STREAM = "AGENTBUS_TASKS"
+
 
 @dataclass(frozen=True)
 class ProcessResult:
@@ -119,8 +121,8 @@ class AgentBusWorker:
         assert self._js is not None
         subject = self.config.task_subject
         durable = self.config.consumer_name
-        logger.info("AgentBus worker starting: subject=%s durable=%s stream=%s", subject, durable, self.config.stream)
-        sub = await self._js.pull_subscribe(subject, durable=durable, stream=self.config.stream)
+        logger.info("AgentBus worker starting: subject=%s durable=%s stream=%s", subject, durable, TASK_STREAM)
+        sub = await self._js.pull_subscribe(subject, durable=durable, stream=TASK_STREAM)
         try:
             while True:
                 try:
