@@ -365,7 +365,7 @@ Read the latest result in one terminal:
 
 ```bash
 agentbus result get \
-  --nats-url 'nats://main:main_password@agentbus.example.com:7422' \
+  --server-url 'nats://main:main_password@agentbus.example.com:7422' \
   --agent main
 ```
 
@@ -373,7 +373,7 @@ To keep watching after reading recent history, add `--watch`. `--limit` has the 
 
 ```bash
 agentbus result get \
-  --nats-url 'nats://main:main_password@agentbus.example.com:7422' \
+  --server-url 'nats://main:main_password@agentbus.example.com:7422' \
   --agent main \
   --limit 20 \
   --watch
@@ -383,7 +383,7 @@ Publish a test task in another terminal:
 
 ```bash
 agentbus task publish \
-  --nats-url 'nats://main:main_password@agentbus.example.com:7422' \
+  --server-url 'nats://main:main_password@agentbus.example.com:7422' \
   --to coder \
   --to reviewer \
   --from main \
@@ -403,13 +403,13 @@ Examples:
 
 ```bash
 agentbus task publish \
-  --nats-url 'nats://main:main_password@agentbus.example.com:7422' \
+  --server-url 'nats://main:main_password@agentbus.example.com:7422' \
   --to coder \
   --task-type ping \
   'hello'
 
 agentbus task publish \
-  --nats-url 'nats://main:main_password@agentbus.example.com:7422' \
+  --server-url 'nats://main:main_password@agentbus.example.com:7422' \
   --to coder \
   --task-type batch \
   '[{"url":"https://example.com"}]'
@@ -532,7 +532,7 @@ worker crashes before result publish                        → nak if available
 - Restrict each user to only the subjects it needs.
 - Use TLS for public NATS deployments.
 - Keep monitoring/admin ports private.
-- Store config files with `chmod 600` if credentials are embedded in `nats_url`.
+- Store config files with `chmod 600` if credentials are embedded in `server_url`.
 - Do not put tokens, cookies, or authorization headers in task payloads unless strictly necessary.
 - Treat tasks that delete data, send external messages, deploy code, merge PRs, or spend money as approval-required.
 

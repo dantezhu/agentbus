@@ -51,15 +51,15 @@ async def collect_recent_results(
     return results
 
 
-async def _default_connect(nats_url: str) -> Any:
+async def _default_connect(server_url: str) -> Any:
     import nats
 
-    return await nats.connect(nats_url)
+    return await nats.connect(server_url)
 
 
 async def read_results(
     *,
-    nats_url: str,
+    server_url: str,
     agent: str,
     limit: int = 1,
     watch: bool = False,
@@ -67,10 +67,10 @@ async def read_results(
     emit: EmitFn = print,
     connect: ConnectFn = _default_connect,
 ) -> None:
-    if not nats_url:
-        raise ValueError("nats_url is required")
+    if not server_url:
+        raise ValueError("server_url is required")
     subject = build_result_subject(agent)
-    nc = await connect(nats_url)
+    nc = await connect(server_url)
     try:
         js = nc.jetstream()
         for item in await collect_recent_results(js, subject, limit=limit, stream=stream):

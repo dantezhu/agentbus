@@ -44,7 +44,7 @@ backup_count = 7
 
     assert config == WorkerConfig(
         agent_id="coder",
-        nats_url="nats://coder:secret@example:4222",
+        server_url="nats://coder:secret@example:4222",
         agent_chat_cmd=["agent-cli", "chat", "--oneshot", "{input}"],
         stream="AGENT_TASKS",
         durable="coder",
@@ -83,7 +83,7 @@ stream = "FILE_STREAM"
     config = build_config(str(config_path))
 
     assert config.agent_id == "file-agent"
-    assert config.nats_url == "nats://file@example:4222"
+    assert config.server_url == "nats://file@example:4222"
     assert config.stream == "FILE_STREAM"
     assert config.task_subject == "agentbus.file-agent.tasks"
     assert config.agent_chat_cmd == ["agent-cli", "chat", "--oneshot", "{input}"]
@@ -166,7 +166,7 @@ def test_example_worker_config_uses_grouped_sections_and_loads():
     config = load_config_file(Path("config/agentbus.worker.example.toml"))
 
     assert config.agent_id == "coder"
-    assert config.nats_url == "nats://username:password@agentbus.example.com:7422"
+    assert config.server_url == "nats://username:password@agentbus.example.com:7422"
     assert config.agent_chat_cmd == ["agent-cli", "chat", "--oneshot", "{input}"]
     assert config.log_dir == "~/.agentbus/logs"
     assert config.log_max_bytes == 104857600

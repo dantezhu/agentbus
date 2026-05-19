@@ -20,7 +20,7 @@ def add_worker_arguments(parser: argparse.ArgumentParser) -> None:
 
 def add_task_publish_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("content", help="Task content. Stored as payload.content")
-    parser.add_argument("--nats-url", required=True, help="NATS connection URL, e.g. nats://user:pass@host:7422")
+    parser.add_argument("--server-url", required=True, help="Server connection URL, e.g. nats://user:pass@host:7422")
     parser.add_argument("--to", action="append", required=True, dest="to_agents", help="Target agent id. Repeat to publish to multiple agents")
     parser.add_argument("--task-type", required=True, help="Task type, e.g. ping or review_pr")
     parser.add_argument("--from", dest="from_agent", default="main", help="Sender agent id")
@@ -28,7 +28,7 @@ def add_task_publish_arguments(parser: argparse.ArgumentParser) -> None:
 
 
 def add_result_get_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--nats-url", required=True, help="NATS connection URL, e.g. nats://user:pass@host:7422")
+    parser.add_argument("--server-url", required=True, help="Server connection URL, e.g. nats://user:pass@host:7422")
     parser.add_argument("--agent", required=True, help="Agent id whose result inbox should be read")
     parser.add_argument("--limit", type=int, default=1, help="Read the latest N stored results before exiting or watching")
     parser.add_argument("--watch", action="store_true", help="After reading the latest N stored results, keep watching new results")
@@ -82,7 +82,7 @@ def configure_logging(
 
 async def run_task_publish(args: argparse.Namespace) -> None:
     messages = await publish_tasks(
-        nats_url=args.nats_url,
+        server_url=args.server_url,
         target_agents=args.to_agents,
         task_type=args.task_type,
         content=args.content,
@@ -106,7 +106,7 @@ def run_worker(args: argparse.Namespace) -> None:
 
 async def run_result_get(args: argparse.Namespace) -> None:
     await read_results(
-        nats_url=args.nats_url,
+        server_url=args.server_url,
         agent=args.agent,
         limit=args.limit,
         watch=args.watch,

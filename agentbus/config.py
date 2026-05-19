@@ -10,7 +10,7 @@ from typing import Any
 @dataclass(frozen=True)
 class WorkerConfig:
     agent_id: str
-    nats_url: str
+    server_url: str
     agent_chat_cmd: list[str]
     stream: str = "AGENT_TASKS"
     durable: str | None = None
@@ -46,7 +46,7 @@ SECTION_FIELD_MAP = {
         "extra_instruction": "extra_instruction",
     },
     "nats": {
-        "url": "nats_url",
+        "url": "server_url",
         "stream": "stream",
         "durable": "durable",
         "task_subject": "task_subject",
@@ -129,7 +129,7 @@ def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
     }
     allowed_fields = {
         "agent_id",
-        "nats_url",
+        "server_url",
         "stream",
         "durable",
         "task_subject",
@@ -149,7 +149,7 @@ def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
         raise ValueError(f"unknown config fields: {', '.join(unknown)}")
 
     merged = defaults | {k: v for k, v in data.items() if v is not None}
-    missing = [key for key in ("agent_id", "nats_url", "agent_chat_cmd") if not merged.get(key)]
+    missing = [key for key in ("agent_id", "server_url", "agent_chat_cmd") if not merged.get(key)]
     if missing:
         raise ValueError(f"missing required config fields: {', '.join(missing)}")
 
@@ -158,7 +158,7 @@ def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
     task_subject = merged.get("task_subject")
     return WorkerConfig(
         agent_id=agent_id,
-        nats_url=str(merged["nats_url"]),
+        server_url=str(merged["server_url"]),
         agent_chat_cmd=normalize_agent_chat_cmd(merged["agent_chat_cmd"]),
         stream=str(merged["stream"]),
         durable=str(durable) if durable else agent_id,

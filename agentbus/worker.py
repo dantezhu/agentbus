@@ -67,7 +67,7 @@ class AgentBusWorker:
         import nats
 
         self._nc = await nats.connect(
-            self.config.nats_url,
+            self.config.server_url,
             reconnect_time_wait=self.config.reconnect_time_wait_seconds,
             max_reconnect_attempts=self.config.max_reconnect_attempts,
         )

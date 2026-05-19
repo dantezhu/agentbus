@@ -37,7 +37,7 @@ result message published back to NATS
 - a private AgentBus TOML config containing `[nats].url`;
 - `agentbus` installed on worker machines.
 
-Examples use the normal NATS URL form such as `nats://username:password@agentbus.example.com:7422`. For public deployments, prefer enabling TLS on the server and switching client URLs to `tls://...`. The example port is `7422` to avoid the default NATS client port `4222`.
+Examples use the normal server URL form such as `nats://username:password@agentbus.example.com:7422`. For public deployments, prefer enabling TLS on the server and switching client URLs to `tls://...`. The example port is `7422` to avoid the default NATS client port `4222`.
 
 ## Subject convention
 
@@ -54,7 +54,7 @@ agentbus.<agent_id>.heartbeat
 
 ```bash
 agentbus task publish \
-  --nats-url 'nats://username:password@agentbus.example.com:7422' \
+  --server-url 'nats://username:password@agentbus.example.com:7422' \
   --to coder \
   --to reviewer \
   --from main \
@@ -70,7 +70,7 @@ JSON-like text example:
 
 ```bash
 agentbus task publish \
-  --nats-url 'nats://username:password@agentbus.example.com:7422' \
+  --server-url 'nats://username:password@agentbus.example.com:7422' \
   --to coder \
   --task-type batch \
   '[{"url":"https://example.com"}]'
@@ -94,7 +94,7 @@ nats --server 'nats://username:password@agentbus.example.com:7422' pub agentbus.
 
 ```bash
 agentbus result get \
-  --nats-url 'nats://username:password@agentbus.example.com:7422' \
+  --server-url 'nats://username:password@agentbus.example.com:7422' \
   --agent main
 ```
 
@@ -104,7 +104,7 @@ Results are worker-generated execution records, not the primary agent-to-agent r
 
 ```bash
 agentbus result get \
-  --nats-url 'nats://username:password@agentbus.example.com:7422' \
+  --server-url 'nats://username:password@agentbus.example.com:7422' \
   --agent main \
   --limit 20 \
   --watch

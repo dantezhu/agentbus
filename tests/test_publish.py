@@ -59,14 +59,14 @@ def test_build_task_message_rejects_empty_content():
         )
 
 
-def test_publish_task_publishes_to_derived_subject_with_explicit_nats_url():
+def test_publish_task_publishes_to_derived_subject_with_explicit_server_url():
     published = []
 
-    async def fake_publisher(nats_url, subject, payload):
-        published.append((nats_url, subject, json.loads(payload.decode("utf-8"))))
+    async def fake_publisher(server_url, subject, payload):
+        published.append((server_url, subject, json.loads(payload.decode("utf-8"))))
 
     message = asyncio.run(publish_task(
-        nats_url="nats://main:secret@agentbus.example.com:7422",
+        server_url="nats://main:secret@agentbus.example.com:7422",
         target_agent="coder",
         task_type="ping",
         content="hello",
@@ -89,11 +89,11 @@ def test_publish_task_publishes_to_derived_subject_with_explicit_nats_url():
 def test_publish_tasks_publishes_one_message_per_target_agent():
     published = []
 
-    async def fake_publisher(nats_url, subject, payload):
-        published.append((nats_url, subject, json.loads(payload.decode("utf-8"))))
+    async def fake_publisher(server_url, subject, payload):
+        published.append((server_url, subject, json.loads(payload.decode("utf-8"))))
 
     messages = asyncio.run(publish_tasks(
-        nats_url="nats://main:secret@agentbus.example.com:7422",
+        server_url="nats://main:secret@agentbus.example.com:7422",
         target_agents=["coder", "reviewer"],
         task_type="ping",
         content="hello",

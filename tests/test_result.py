@@ -96,12 +96,12 @@ def test_read_results_uses_same_limit_before_watch_and_non_watch():
     nc = FakeNats()
     seen = []
 
-    async def fake_connect(nats_url):
-        assert nats_url == "nats://main:secret@agentbus.example.com:7422"
+    async def fake_connect(server_url):
+        assert server_url == "nats://main:secret@agentbus.example.com:7422"
         return nc
 
     asyncio.run(read_results(
-        nats_url="nats://main:secret@agentbus.example.com:7422",
+        server_url="nats://main:secret@agentbus.example.com:7422",
         agent="main",
         limit=2,
         watch=True,

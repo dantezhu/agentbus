@@ -55,10 +55,10 @@ def build_task_message(
     }
 
 
-async def nats_publisher(nats_url: str, subject: str, payload: bytes) -> None:
+async def nats_publisher(server_url: str, subject: str, payload: bytes) -> None:
     import nats
 
-    nc = await nats.connect(nats_url)
+    nc = await nats.connect(server_url)
     try:
         await nc.publish(subject, payload)
         await nc.flush()
@@ -68,7 +68,7 @@ async def nats_publisher(nats_url: str, subject: str, payload: bytes) -> None:
 
 async def publish_task(
     *,
-    nats_url: str,
+    server_url: str,
     target_agent: str,
     task_type: str,
     content: str,
@@ -76,8 +76,8 @@ async def publish_task(
     reply_to: str | None = None,
     publisher: PublisherFn = nats_publisher,
 ) -> dict[str, Any]:
-    if not nats_url:
-        raise ValueError("nats_url is required")
+    if not server_url:
+        raise ValueError("server_url is required")
     target = require_agent_id(target_agent)
     message = build_task_message(
         from_agent=from_agent,
@@ -86,13 +86,13 @@ async def publish_task(
         content=content,
         reply_to=reply_to,
     )
-    await publisher(nats_url, build_task_subject(target), dump_json(message))
+    await publisher(server_url, build_task_subject(target), dump_json(message))
     return message
 
 
 async def publish_tasks(
     *,
-    nats_url: str,
+    server_url: str,
     target_agents: list[str],
     task_type: str,
     content: str,
@@ -107,7 +107,7 @@ async def publish_tasks(
     messages = []
     for target in targets:
         messages.append(await publish_task(
-            nats_url=nats_url,
+            server_url=server_url,
             target_agent=target,
             task_type=task_type,
             content=content,

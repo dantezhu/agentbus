@@ -33,7 +33,7 @@ class DummyPublisher:
 def make_config():
     return WorkerConfig(
         agent_id="coder",
-        nats_url="nats://example:4222",
+        server_url="nats://example:4222",
         agent_chat_cmd=["agent-cli", "chat", "--oneshot", "{input}"],
         durable="coder",
         task_subject="agentbus.coder.tasks",
@@ -147,7 +147,7 @@ def test_run_agent_chat_uses_configured_command(monkeypatch):
 def test_build_agent_command_replaces_input_placeholder_without_forcing_last_arg():
     config = WorkerConfig(
         agent_id="coder",
-        nats_url="nats://example:4222",
+        server_url="nats://example:4222",
         agent_chat_cmd=["agent-cli", "run", "--prompt", "{input}", "--json"],
     )
 
