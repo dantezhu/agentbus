@@ -192,13 +192,13 @@ tls {
 }
 ```
 
-Clients should then use the domain and `tls://` scheme:
+The examples in this README use the normal `nats://` URL form:
 
 ```text
-tls://main:main_password@agentbus.example.com:7422
+nats://main:main_password@agentbus.example.com:7422
 ```
 
-If you do not enable TLS, use `nats://...`, but avoid exposing that setup to the public internet.
+If you enable the TLS block above, use `tls://` instead, for example `tls://main:main_password@agentbus.example.com:7422`. Avoid exposing non-TLS `nats://` connections to the public internet.
 
 For a real deployment, run the same command under your service manager, for example systemd, Docker, or a managed NATS service.
 
@@ -224,7 +224,7 @@ After the NATS server is running, create the task and result streams.
 Use a user with JetStream API permission. In the sample config, `main` has `$JS.API.>` access:
 
 ```bash
-./scripts/stream-setup.sh 'tls://main:main_password@agentbus.example.com:7422'
+./scripts/stream-setup.sh 'nats://main:main_password@agentbus.example.com:7422'
 ```
 
 This creates:
@@ -237,9 +237,9 @@ AGENT_RESULTS   subjects: agentbus.*.results  max age: 30d
 You can inspect the streams with:
 
 ```bash
-nats --server 'tls://main:main_password@agentbus.example.com:7422' stream ls
-nats --server 'tls://main:main_password@agentbus.example.com:7422' stream info AGENT_TASKS
-nats --server 'tls://main:main_password@agentbus.example.com:7422' stream info AGENT_RESULTS
+nats --server 'nats://main:main_password@agentbus.example.com:7422' stream ls
+nats --server 'nats://main:main_password@agentbus.example.com:7422' stream info AGENT_TASKS
+nats --server 'nats://main:main_password@agentbus.example.com:7422' stream info AGENT_RESULTS
 ```
 
 ## 3. Install the worker
@@ -299,7 +299,8 @@ id = "coder"
 chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 
 [nats]
-url = "tls://coder:coder_password@agentbus.example.com:7422"
+# Use tls:// instead if the server TLS block is enabled.
+url = "nats://coder:coder_password@agentbus.example.com:7422"
 ```
 
 A fuller example:
@@ -317,7 +318,8 @@ reconnect_time_wait_seconds = 2
 max_reconnect_attempts = -1
 
 [nats]
-url = "tls://coder:coder_password@agentbus.example.com:7422"
+# Use tls:// instead if the server TLS block is enabled.
+url = "nats://coder:coder_password@agentbus.example.com:7422"
 stream = "AGENT_TASKS"
 task_subject = "agentbus.coder.tasks"
 default_result_subject = "agentbus.main.results"
@@ -369,7 +371,7 @@ Read the latest result in one terminal:
 
 ```bash
 agentbus result get \
-  --nats-url 'tls://main:main_password@agentbus.example.com:7422' \
+  --nats-url 'nats://main:main_password@agentbus.example.com:7422' \
   --agent main
 ```
 
@@ -377,7 +379,7 @@ To keep watching after reading recent history, add `--watch`. `--limit` has the 
 
 ```bash
 agentbus result get \
-  --nats-url 'tls://main:main_password@agentbus.example.com:7422' \
+  --nats-url 'nats://main:main_password@agentbus.example.com:7422' \
   --agent main \
   --limit 20 \
   --watch
@@ -387,7 +389,7 @@ Publish a test task in another terminal:
 
 ```bash
 agentbus task publish \
-  --nats-url 'tls://main:main_password@agentbus.example.com:7422' \
+  --nats-url 'nats://main:main_password@agentbus.example.com:7422' \
   --to coder \
   --to reviewer \
   --from main \
@@ -407,13 +409,13 @@ Examples:
 
 ```bash
 agentbus task publish \
-  --nats-url 'tls://main:main_password@agentbus.example.com:7422' \
+  --nats-url 'nats://main:main_password@agentbus.example.com:7422' \
   --to coder \
   --task-type ping \
   'hello'
 
 agentbus task publish \
-  --nats-url 'tls://main:main_password@agentbus.example.com:7422' \
+  --nats-url 'nats://main:main_password@agentbus.example.com:7422' \
   --to coder \
   --task-type batch \
   '[{"url":"https://example.com"}]'

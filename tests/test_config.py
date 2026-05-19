@@ -166,7 +166,7 @@ def test_example_worker_config_uses_grouped_sections_and_loads():
     config = load_config_file(Path("config/agentbus.worker.example.toml"))
 
     assert config.agent_id == "coder"
-    assert config.nats_url == "tls://username:password@agentbus.example.com:7422"
+    assert config.nats_url == "nats://username:password@agentbus.example.com:7422"
     assert config.agent_chat_cmd == ["agent-cli", "chat", "--oneshot", "{input}"]
     assert config.log_dir == "~/.agentbus/logs"
     assert config.log_max_bytes == 104857600

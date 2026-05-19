@@ -24,7 +24,8 @@ reconnect_time_wait_seconds = 2
 max_reconnect_attempts = -1
 
 [nats]
-url = "tls://username:password@agentbus.example.com:7422"
+# Use tls:// instead if the server TLS block is enabled.
+url = "nats://username:password@agentbus.example.com:7422"
 stream = "AGENT_TASKS"
 task_subject = "agentbus.coder.tasks"
 default_result_subject = "agentbus.main.results"

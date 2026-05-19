@@ -37,7 +37,7 @@ result message published back to NATS
 - a private AgentBus TOML config containing `[nats].url`;
 - `agentbus` installed on worker machines.
 
-For public deployments, prefer a domain and TLS URL such as `tls://username:password@agentbus.example.com:7422`. The example port is `7422` to avoid the default NATS client port `4222`.
+Examples use the normal NATS URL form such as `nats://username:password@agentbus.example.com:7422`. For public deployments, prefer enabling TLS on the server and switching client URLs to `tls://...`. The example port is `7422` to avoid the default NATS client port `4222`.
 
 ## Subject convention
 
@@ -54,7 +54,7 @@ agentbus.<agent_id>.heartbeat
 
 ```bash
 agentbus task publish \
-  --nats-url 'tls://username:password@agentbus.example.com:7422' \
+  --nats-url 'nats://username:password@agentbus.example.com:7422' \
   --to coder \
   --to reviewer \
   --from main \
@@ -70,7 +70,7 @@ JSON-like text example:
 
 ```bash
 agentbus task publish \
-  --nats-url 'tls://username:password@agentbus.example.com:7422' \
+  --nats-url 'nats://username:password@agentbus.example.com:7422' \
   --to coder \
   --task-type batch \
   '[{"url":"https://example.com"}]'
@@ -79,7 +79,7 @@ agentbus task publish \
 Equivalent direct publish:
 
 ```bash
-nats --server 'tls://username:password@agentbus.example.com:7422' pub agentbus.coder.tasks '{
+nats --server 'nats://username:password@agentbus.example.com:7422' pub agentbus.coder.tasks '{
   "id":"task-001",
   "from":"main",
   "to":"coder",
@@ -94,7 +94,7 @@ nats --server 'tls://username:password@agentbus.example.com:7422' pub agentbus.c
 
 ```bash
 agentbus result get \
-  --nats-url 'tls://username:password@agentbus.example.com:7422' \
+  --nats-url 'nats://username:password@agentbus.example.com:7422' \
   --agent main
 ```
 
@@ -104,7 +104,7 @@ Results are worker-generated execution records, not the primary agent-to-agent r
 
 ```bash
 agentbus result get \
-  --nats-url 'tls://username:password@agentbus.example.com:7422' \
+  --nats-url 'nats://username:password@agentbus.example.com:7422' \
   --agent main \
   --limit 20 \
   --watch
@@ -130,7 +130,7 @@ reconnect_time_wait_seconds = 2
 max_reconnect_attempts = -1
 
 [nats]
-url = "tls://username:password@agentbus.example.com:7422"
+url = "nats://username:password@agentbus.example.com:7422"
 stream = "AGENT_TASKS"
 task_subject = "agentbus.coder.tasks"
 default_result_subject = "agentbus.main.results"

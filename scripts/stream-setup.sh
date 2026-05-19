@@ -3,7 +3,7 @@ set -euo pipefail
 
 if [[ $# -ne 1 ]]; then
   echo "Usage: $0 <nats-url>" >&2
-  echo "Example: $0 tls://username:password@agentbus.example.com:7422" >&2
+  echo "Example: $0 nats://username:password@agentbus.example.com:7422" >&2
   exit 2
 fi
 

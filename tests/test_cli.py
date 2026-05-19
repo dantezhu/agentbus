@@ -32,7 +32,7 @@ def test_parser_accepts_task_publish_subcommand_with_named_agent_args_and_positi
         "task",
         "publish",
         "--nats-url",
-        "tls://main:secret@agentbus.example.com:7422",
+        "nats://main:secret@agentbus.example.com:7422",
         "--to",
         "coder",
         "--to",
@@ -51,7 +51,7 @@ def test_parser_accepts_task_publish_subcommand_with_named_agent_args_and_positi
     assert args.to_agents == ["coder", "reviewer"]
     assert args.task_type == "ping"
     assert args.content == "hello"
-    assert args.nats_url == "tls://main:secret@agentbus.example.com:7422"
+    assert args.nats_url == "nats://main:secret@agentbus.example.com:7422"
     assert args.from_agent == "main"
     assert args.reply_to == "main"
     assert not hasattr(args, "payload_fmt")
@@ -74,7 +74,7 @@ def test_parser_rejects_task_publish_without_named_target_or_task_type():
             "task",
             "publish",
             "--nats-url",
-            "tls://main:secret@agentbus.example.com:7422",
+            "nats://main:secret@agentbus.example.com:7422",
             "coder",
             "ping",
             "hello",
@@ -99,7 +99,7 @@ def test_parser_rejects_removed_task_publish_options():
                 "task",
                 "publish",
                 "--nats-url",
-                "tls://main:secret@agentbus.example.com:7422",
+                "nats://main:secret@agentbus.example.com:7422",
                 "--to",
                 "coder",
                 "--task-type",
@@ -125,7 +125,7 @@ def test_parser_rejects_removed_task_fmt_option():
             "task",
             "publish",
             "--nats-url",
-            "tls://main:secret@agentbus.example.com:7422",
+            "nats://main:secret@agentbus.example.com:7422",
             "--to",
             "coder",
             "--task-type",
@@ -143,7 +143,7 @@ def test_parser_accepts_result_get_with_same_limit_for_watch_and_non_watch():
         "result",
         "get",
         "--nats-url",
-        "tls://main:secret@agentbus.example.com:7422",
+        "nats://main:secret@agentbus.example.com:7422",
         "--agent",
         "main",
         "--limit",
@@ -153,7 +153,7 @@ def test_parser_accepts_result_get_with_same_limit_for_watch_and_non_watch():
 
     assert args.command == "result"
     assert args.result_command == "get"
-    assert args.nats_url == "tls://main:secret@agentbus.example.com:7422"
+    assert args.nats_url == "nats://main:secret@agentbus.example.com:7422"
     assert args.agent == "main"
     assert args.limit == 20
     assert args.watch is True
@@ -168,7 +168,7 @@ def test_parser_rejects_result_get_ack_option():
             "result",
             "get",
             "--nats-url",
-            "tls://main:secret@agentbus.example.com:7422",
+            "nats://main:secret@agentbus.example.com:7422",
             "--agent",
             "main",
             "--ack",

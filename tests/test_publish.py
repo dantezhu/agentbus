@@ -66,7 +66,7 @@ def test_publish_task_publishes_to_derived_subject_with_explicit_nats_url():
         published.append((nats_url, subject, json.loads(payload.decode("utf-8"))))
 
     message = asyncio.run(publish_task(
-        nats_url="tls://main:secret@agentbus.example.com:7422",
+        nats_url="nats://main:secret@agentbus.example.com:7422",
         target_agent="coder",
         task_type="ping",
         content="hello",
@@ -79,7 +79,7 @@ def test_publish_task_publishes_to_derived_subject_with_explicit_nats_url():
     assert message["reply_to"] == "main"
     assert published == [
         (
-            "tls://main:secret@agentbus.example.com:7422",
+            "nats://main:secret@agentbus.example.com:7422",
             "agentbus.coder.tasks",
             message,
         )
@@ -93,7 +93,7 @@ def test_publish_tasks_publishes_one_message_per_target_agent():
         published.append((nats_url, subject, json.loads(payload.decode("utf-8"))))
 
     messages = asyncio.run(publish_tasks(
-        nats_url="tls://main:secret@agentbus.example.com:7422",
+        nats_url="nats://main:secret@agentbus.example.com:7422",
         target_agents=["coder", "reviewer"],
         task_type="ping",
         content="hello",
