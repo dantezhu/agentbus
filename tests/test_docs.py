@@ -26,6 +26,8 @@ def test_readme_documents_nats_server_source_and_install_steps():
     assert "nats-server -c /etc/nats/agentbus.conf" in readme
     assert "store_dir: \"/data/nats\"" in readme
     assert "jetstream: enabled" in readme
+    assert "AGENTBUS: {" in readme
+    assert "AGENTS: {" not in readme
     assert "JetStream not enabled for account (10039)" in readme
     assert "/data/jetstream" not in readme
     assert "sudo chmod 600 /etc/nats-server.conf" not in readme
@@ -39,6 +41,8 @@ def test_nats_worker_users_can_publish_results_and_ack_tasks():
     for result_subject in ("agentbus.coder.results", "agentbus.reviewer.results"):
         assert result_subject in conf
     assert "agentbus.main.results" in conf
+    assert "AGENTBUS: {" in conf
+    assert "AGENTS: {" not in conf
     assert '"$JS.API.>"' in conf
     assert '"$JS.ACK.>"' in conf
     assert '"$js.ack.>"' in conf
