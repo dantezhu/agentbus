@@ -99,10 +99,8 @@ nats --version
 Copy the sample config to the server's NATS config path. The upstream systemd example uses `/etc/nats-server.conf`; some distro packages may use a different path, so match the service you install.
 
 ```bash
-sudo mkdir -p /data/jetstream /etc/nats/tls
+sudo mkdir -p /data/nats /etc/nats/tls
 sudo cp config/nats-server.conf /etc/nats-server.conf
-sudo chmod 600 /etc/nats-server.conf
-sudo chown -R nats:nats /data/jetstream 2>/dev/null || true
 ```
 
 Edit the config before starting the server:
@@ -110,8 +108,6 @@ Edit the config before starting the server:
 ```bash
 sudo $EDITOR /etc/nats-server.conf
 ```
-
-If you prefer a project-specific filename such as `/etc/nats/agentbus.conf`, that is also fine, but then make sure your service or start command explicitly uses `nats-server -c /etc/nats/agentbus.conf`.
 
 At minimum, change these values:
 
@@ -121,8 +117,22 @@ coder password
 reviewer password
 client port, if `7422` is not appropriate
 TLS cert/key paths, if public internet clients will connect
-jetstream.store_dir, if /data/jetstream is not appropriate
+jetstream.store_dir, if /data/nats is not appropriate
 ```
+
+Start the server with that config:
+
+```bash
+nats-server -c /etc/nats-server.conf
+```
+
+If you use a project-specific filename such as `/etc/nats/agentbus.conf`, start with that exact path instead:
+
+```bash
+nats-server -c /etc/nats/agentbus.conf
+```
+
+For service-managed deployments, make sure the service runs the same `-c` path and that its OS user can write to `jetstream.store_dir`.
 
 The sample config defines three users:
 
@@ -136,11 +146,13 @@ It also enables JetStream:
 
 ```text
 jetstream {
-  store_dir: "/data/jetstream"
+  store_dir: "/data/nats"
   max_mem_store: 256MiB
   max_file_store: 10GiB
 }
 ```
+
+NATS stores JetStream data under a `jetstream/` child directory of `store_dir`, so this example writes data under `/data/nats/jetstream`. Avoid setting `store_dir` to a path that already ends in `jetstream`, or you will get a nested `jetstream/jetstream` directory.
 
 ### Domain and TLS
 
@@ -179,13 +191,7 @@ tls://main:main_password@agentbus.example.com:7422
 
 If you do not enable TLS, use `nats://...`, but avoid exposing that setup to the public internet.
 
-Start the server with the config:
-
-```bash
-nats-server -c /etc/nats-server.conf
-```
-
-For a real deployment, run this under your service manager, for example systemd, Docker, or a managed NATS service.
+For a real deployment, run the same command under your service manager, for example systemd, Docker, or a managed NATS service.
 
 Important network notes:
 
