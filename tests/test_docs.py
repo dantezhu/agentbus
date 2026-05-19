@@ -33,6 +33,17 @@ def test_readme_documents_nats_server_source_and_install_steps():
     assert "nats --server 'nats://main:main_password@agentbus.example.com:7422' stream ls" in readme
 
 
+def test_nats_worker_users_can_publish_results_and_ack_tasks():
+    conf = (ROOT / "config" / "nats-server.conf").read_text()
+
+    for result_subject in ("agentbus.coder.results", "agentbus.reviewer.results"):
+        assert result_subject in conf
+    assert "agentbus.main.results" in conf
+    assert '"$JS.API.>"' in conf
+    assert '"$JS.ACK.>"' in conf
+    assert '"$js.ack.>"' in conf
+
+
 def test_readme_and_example_document_chat_cmd_input_placeholder_and_hermes():
     readme = (ROOT / "README.md").read_text()
     example = (ROOT / "config" / "agentbus.worker.example.toml").read_text()

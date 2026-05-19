@@ -522,7 +522,7 @@ worker crashes before result publish                        → nak if available
 
 - Use one NATS user per agent.
 - Replace all sample passwords before running in a shared or public environment.
-- Restrict each user to only the subjects it needs.
+- Restrict each user to only the subjects it needs. Worker users still need JetStream API and ack publish permissions (`$JS.API.>` plus `$JS.ACK.>` / `$js.ack.>`) so pull consumers can fetch and acknowledge tasks.
 - Use TLS for public NATS deployments.
 - Keep monitoring/admin ports private.
 - Store config files with `chmod 600` if credentials are embedded in `[worker].server_url`.

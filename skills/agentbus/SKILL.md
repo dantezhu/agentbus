@@ -148,6 +148,6 @@ When a task may cause irreversible side effects, external sends, production chan
 
 1. Confirm the task subject derived from `[agent].id` is `agentbus.<id>.tasks` and matches the target used by `agentbus task publish --to <id>`.
 2. Confirm the worker can connect to `[worker].server_url`.
-3. Confirm NATS user permissions allow subscribe on `agentbus.<id>.tasks` and publish on result subjects.
+3. Confirm NATS user permissions allow subscribe on `agentbus.<id>.tasks`, publish on result subjects, and publish JetStream acks (`$JS.ACK.>` / `$js.ack.>`).
 4. Confirm TOML `chat_cmd` works locally before starting the worker.
 5. Check worker logs at `~/.agentbus/logs/agentbus-worker.log` for invalid JSON, command timeout, or publish failures.
