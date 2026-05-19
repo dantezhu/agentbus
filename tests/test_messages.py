@@ -2,7 +2,14 @@ import json
 
 import pytest
 
-from agentbus.messages import TaskMessage, build_agent_prompt, build_result_message, load_task
+from agentbus.messages import (
+    AGENT_PROMPT_DEFAULT_INSTRUCTIONS,
+    EXTRA_INSTRUCTION_HEADER,
+    TaskMessage,
+    build_agent_prompt,
+    build_result_message,
+    load_task,
+)
 
 
 def test_load_task_requires_core_fields():
@@ -30,7 +37,10 @@ def test_build_agent_prompt_includes_payload_and_safety_boundary():
     assert "coder" in prompt
     assert "Task type: review_pr" in prompt
     assert '"pr": 12' in prompt
+    assert AGENT_PROMPT_DEFAULT_INSTRUCTIONS.strip() in prompt
+    assert "By default" in prompt
     assert "needs_approval" in prompt
+    assert EXTRA_INSTRUCTION_HEADER in prompt
     assert "Be concise." in prompt
     assert "Risk level" not in prompt
 

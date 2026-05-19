@@ -9,6 +9,26 @@ from typing import Any
 
 REQUIRED_TASK_FIELDS = ("id", "from", "to", "type", "task_type")
 
+AGENT_PROMPT_INTRO_TEMPLATE = (
+    "You are {agent_id}. You received an asynchronous AgentBus task from {from_agent}."
+)
+
+AGENT_PROMPT_TASK_CONTEXT_TEMPLATE = """\
+Task type: {task_type}
+Message ID: {message_id}
+
+Full task JSON:
+{payload_json}
+"""
+
+AGENT_PROMPT_DEFAULT_INSTRUCTIONS = """\
+Handle the task and return a clear result.
+By default, if the task involves irreversible side effects, deleting or overwriting files, commits/merges, external messages, production changes, money, or unclear credentials/permissions, do not execute it directly; return status=needs_approval and explain the exact operation needing user confirmation.
+Do not include secrets, tokens, cookies, or Authorization headers in the result.
+"""
+
+EXTRA_INSTRUCTION_HEADER = "Extra instruction:"
+
 
 @dataclass(frozen=True)
 class TaskMessage:
@@ -73,20 +93,21 @@ def dump_json(data: dict[str, Any]) -> bytes:
 def build_agent_prompt(task: TaskMessage, agent_id: str, extra_instruction: str = "") -> str:
     payload_json = json.dumps(task.as_dict(), ensure_ascii=False, indent=2)
     parts = [
-        f"You are {agent_id}. You received an asynchronous AgentBus task from {task.from_agent}.",
+        AGENT_PROMPT_INTRO_TEMPLATE.format(
+            agent_id=agent_id,
+            from_agent=task.from_agent,
+        ),
         "",
-        f"Task type: {task.task_type}",
-        f"Message ID: {task.id}",
+        AGENT_PROMPT_TASK_CONTEXT_TEMPLATE.format(
+            task_type=task.task_type,
+            message_id=task.id,
+            payload_json=payload_json,
+        ).strip(),
         "",
-        "Full task JSON:",
-        payload_json,
-        "",
-        "Handle the task and return a clear result.",
-        "If the task involves irreversible side effects, deleting or overwriting files, commits/merges, external messages, production changes, money, or unclear credentials/permissions, do not execute it directly; return status=needs_approval and explain the exact operation needing user confirmation.",
-        "Do not include secrets, tokens, cookies, or Authorization headers in the result.",
+        AGENT_PROMPT_DEFAULT_INSTRUCTIONS.strip(),
     ]
     if extra_instruction:
-        parts.extend(["", "Extra instruction:", extra_instruction])
+        parts.extend(["", EXTRA_INSTRUCTION_HEADER, extra_instruction.strip()])
     return "\n".join(parts)
 
 
