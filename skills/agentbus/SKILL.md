@@ -22,22 +22,30 @@ Use this skill when an agent needs to:
 ## Core model
 
 ```text
-public NATS JetStream server
+shared NATS JetStream server
   ↓
-agentbus worker run on each worker machine
+agentbus task publish sends task messages
   ↓
-configured agent command via TOML chat_cmd
+target worker consumes agentbus.<agent_id>.tasks
   ↓
-result message published back to NATS
+worker publishes task.result records
 ```
 
-## Required local tools
+## Local setup
 
-- `nats` CLI configured or installed;
-- a private AgentBus TOML config containing `[worker].server_url`;
-- `agentbus` installed on worker machines.
+Install the AgentBus CLI if it is missing:
 
-Examples use the normal server URL form such as `nats://username:password@agentbus.example.com:7422`. For public deployments, prefer enabling TLS on the server and switching client URLs to `tls://...`. The example port is `7422` to avoid the default NATS client port `4222`.
+```bash
+pip install agentbus
+```
+
+Expose the shared server URL in the active agent environment:
+
+```bash
+AGENTBUS_SERVER_URL='nats://username:password@agentbus.example.com:7422'
+```
+
+For Hermes, put the same `AGENTBUS_SERVER_URL=...` line in `~/.hermes/.env`.
 
 ## Subject convention
 
@@ -54,7 +62,7 @@ agentbus.<agent_id>.heartbeat
 
 ```bash
 agentbus task publish \
-  --server-url 'nats://username:password@agentbus.example.com:7422' \
+  --server-url "$AGENTBUS_SERVER_URL" \
   --to coder \
   --to reviewer \
   --from main \
@@ -70,31 +78,17 @@ JSON-like text example:
 
 ```bash
 agentbus task publish \
-  --server-url 'nats://username:password@agentbus.example.com:7422' \
+  --server-url "$AGENTBUS_SERVER_URL" \
   --to coder \
   --task-type batch \
   '[{"url":"https://example.com"}]'
-```
-
-Equivalent direct publish:
-
-```bash
-nats --server 'nats://username:password@agentbus.example.com:7422' pub agentbus.coder.tasks '{
-  "id":"task-001",
-  "from":"main",
-  "to":"coder",
-  "reply_to":"main",
-  "type":"task.request",
-  "task_type":"ping",
-  "payload":{"content":"hello"}
-}'
 ```
 
 ## Read or watch results
 
 ```bash
 agentbus result get \
-  --server-url 'nats://username:password@agentbus.example.com:7422' \
+  --server-url "$AGENTBUS_SERVER_URL" \
   --agent main
 ```
 
@@ -104,41 +98,11 @@ Results are worker-generated execution records, not the primary agent-to-agent r
 
 ```bash
 agentbus result get \
-  --server-url 'nats://username:password@agentbus.example.com:7422' \
+  --server-url "$AGENTBUS_SERVER_URL" \
   --agent main \
   --limit 20 \
   --watch
 ```
-
-## Worker config
-
-Default user config path:
-
-```text
-~/.agentbus/config.toml
-```
-
-```toml
-[agent]
-id = "coder"
-chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
-
-[worker]
-server_url = "nats://username:password@agentbus.example.com:7422"
-task_timeout_seconds = 1800
-max_task_bytes = 1048576
-reconnect_time_wait_seconds = 2
-max_reconnect_attempts = -1
-
-[log]
-dir = "~/.agentbus/logs"
-max_bytes = 104857600
-backup_count = 5
-```
-
-`chat_cmd` is required, must be a TOML array of strings, and must include the literal `{input}` placeholder where AgentBus should insert the generated prompt. String-form commands are rejected so the prompt is always passed as one explicit argv argument, never shell-parsed. For prompts between flags, use `chat_cmd = ["agent-cli", "run", "--prompt", "{input}", "--json"]`. For Hermes workers, use `chat_cmd = ["hermes", "chat", "-Q", "-q", "{input}"]`; `-q` must be followed immediately by the query text.
-
-Worker routing fields are derived and not configurable: the task subject is `agentbus.<agent.id>.tasks`, the durable consumer name is `<agent.id>`, and results are published to `agentbus.<task.reply_to or task.from>.results`.
 
 ## Safety rule
 
@@ -146,8 +110,8 @@ When a task may cause irreversible side effects, external sends, production chan
 
 ## Troubleshooting
 
-1. Confirm the task subject derived from `[agent].id` is `agentbus.<id>.tasks` and matches the target used by `agentbus task publish --to <id>`.
-2. Confirm the worker can connect to `[worker].server_url`.
-3. Confirm NATS user permissions allow subscribe on `agentbus.<id>.tasks`, publish on result subjects, and publish JetStream acks (`$JS.ACK.>`).
-4. Confirm TOML `chat_cmd` works locally before starting the worker.
-5. Check worker logs at `~/.agentbus/logs/agentbus-worker.log` for invalid JSON, command timeout, or publish failures.
+1. Confirm `AGENTBUS_SERVER_URL` is set in the active agent environment.
+2. Confirm the target id maps to `agentbus.<id>.tasks` and matches `agentbus task publish --to <id>`.
+3. Confirm the target worker is running and its `[agent].id` matches the target id.
+4. Confirm result reading uses the expected inbox; `--agent main` reads `agentbus.main.results`.
+5. If no result arrives, inspect the target worker logs for invalid JSON, command timeout, or publish failures.

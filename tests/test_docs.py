@@ -51,15 +51,28 @@ def test_nats_worker_users_can_publish_results_and_ack_tasks():
 def test_readme_and_example_document_chat_cmd_input_placeholder_and_hermes():
     readme = (ROOT / "README.md").read_text()
     example = (ROOT / "config" / "agentbus.worker.example.toml").read_text()
-    skill = (ROOT / "skills" / "agentbus" / "SKILL.md").read_text()
 
-    for text in (readme, example, skill):
+    for text in (readme, example):
         assert "{input}" in text
         assert '["hermes", "chat", "-Q", "-q", "{input}"]' in text
         assert '["hermes", "chat", "-q", "-Q", "{input}"]' not in text
 
 
-def test_docs_do_not_recommend_environment_variable_configuration():
+def test_agentbus_skill_focuses_on_cli_usage_not_worker_setup():
+    skill = (ROOT / "skills" / "agentbus" / "SKILL.md").read_text()
+
+    assert "pip install agentbus" in skill
+    assert "AGENTBUS_SERVER_URL" in skill
+    assert "~/.hermes/.env" in skill
+    assert '--server-url "$AGENTBUS_SERVER_URL"' in skill
+    assert "Equivalent direct publish" not in skill
+    assert "nats --server" not in skill
+    assert "## Worker config" not in skill
+    assert "chat_cmd" not in skill
+    assert "[worker]" not in skill
+
+
+def test_docs_do_not_recommend_legacy_environment_variable_configuration():
     readme = (ROOT / "README.md").read_text()
     example = (ROOT / "config" / "agentbus.worker.example.toml").read_text()
     skill = (ROOT / "skills" / "agentbus" / "SKILL.md").read_text()
