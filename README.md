@@ -72,6 +72,7 @@ Worker side:
 ## 1. Configure the NATS server
 
 - [NATS server source and releases](https://github.com/nats-io/nats-server)
+- [NATS CLI source and releases](https://github.com/nats-io/natscli)
 - [Official NATS installation guide](https://docs.nats.io/running-a-nats-service/introduction/installation)
 
 Simple install examples:
