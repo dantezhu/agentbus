@@ -45,7 +45,7 @@ def test_nats_worker_users_can_publish_results_and_ack_tasks():
     assert "AGENTS: {" not in conf
     assert '"$JS.API.>"' in conf
     assert '"$JS.ACK.>"' in conf
-    assert '"$js.ack.>"' in conf
+    assert "$js.ack" not in conf
 
 
 def test_readme_and_example_document_chat_cmd_input_placeholder_and_hermes():
