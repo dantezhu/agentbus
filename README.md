@@ -5,13 +5,36 @@
 It is designed for this architecture:
 
 ```text
-coordinator agent / human entry point
-  ↓ publishes task
-public NATS JetStream server
-  ↓ durable delivery
-agentbus worker long-running process on each worker machine
-  ↓ invokes configured agent command
-worker publishes result message and ack/nak/term the task
+                              +-------------------+
+                              |       human       |
+                              +---------+---------+
+                                        |
+                                        v
+                              +-------------------+
+                              |    main agent     |
+                              +----+---------+----+
+                                   |         ^
+                    publish tasks  |         |  read results
+                                   v         |
++----------------------------------+---------+----------------------------------+
+|                         public NATS JetStream bus                             |
+|                                                                               |
+|        +---------------------+                 +----------------------+       |
+|        |    tasks stream     |                 |    results stream    |       |
+|        +----------+----------+                 +----------+-----------+       |
+|                   |                                       ^                   |
++-------------------|---------------------------------------|-------------------+
+                    |                                       |
+      deliver tasks |                                       |  publish results
+                    v                                       |
++-------------------+---------------------------------------+-------------------+
+|                              agentbus workers                                 |
+|                                                                               |
+|        +------------------------+             +------------------------+      |
+|        |      coder worker      |             |    reviewer worker     |      |
+|        |  invokes coder agent   |             | invokes reviewer agent |      |
+|        +------------------------+             +------------------------+      |
++-------------------------------------------------------------------------------+
 ```
 
 ## Design goals
