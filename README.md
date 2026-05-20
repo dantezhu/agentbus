@@ -163,27 +163,11 @@ The top-level `jetstream` block turns on JetStream for the server. Because this 
 
 NATS stores JetStream data under a `jetstream/` child directory of `store_dir`, so this example writes data under `/data/nats/jetstream`. Avoid setting `store_dir` to a path that already ends in `jetstream`, or you will get a nested `jetstream/jetstream` directory.
 
-### Domain and TLS
+### TLS
 
-For public internet deployments, prefer a domain plus TLS. The domain is configured in DNS, not inside NATS. NATS only needs to know which certificate and key files to serve.
+For public internet deployments, avoid exposing non-TLS `nats://` connections. Use TLS or put the NATS client port behind a VPN/private network.
 
-Example DNS setup:
-
-```text
-agentbus.example.com.  A     <server_public_ipv4>
-agentbus.example.com.  AAAA  <server_public_ipv6, optional>
-```
-
-Example Let's Encrypt certificate flow on the server:
-
-```bash
-sudo certbot certonly --standalone -d agentbus.example.com
-sudo install -m 0644 /etc/letsencrypt/live/agentbus.example.com/fullchain.pem /etc/nats/tls/fullchain.pem
-sudo install -m 0600 /etc/letsencrypt/live/agentbus.example.com/privkey.pem /etc/nats/tls/privkey.pem
-sudo chown -R nats:nats /etc/nats/tls 2>/dev/null || true
-```
-
-Then uncomment or add the TLS block in the NATS config file:
+To enable TLS, add certificate and key paths to the NATS config:
 
 ```text
 tls {
@@ -192,19 +176,12 @@ tls {
 }
 ```
 
-The examples in this README use the normal non-TLS URL form:
+Then switch client URLs from `nats://` to `tls://`:
 
 ```text
 nats://main:main_password@agentbus.example.com:7678
-```
-
-If the TLS block is enabled, switch client URLs to `tls://`, for example:
-
-```text
 tls://main:main_password@agentbus.example.com:7678
 ```
-
-For public internet deployments, avoid exposing non-TLS `nats://` connections. Use TLS or put the NATS client port behind a VPN/private network.
 
 Important network notes:
 
