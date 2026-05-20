@@ -38,8 +38,8 @@ def test_build_agent_prompt_includes_payload_and_safety_boundary():
     assert "Task type: review_pr" in prompt
     assert '"pr": 12' in prompt
     assert AGENT_PROMPT_DEFAULT_INSTRUCTIONS.strip() in prompt
-    assert "By default" in prompt
-    assert "needs_approval" in prompt
+    assert "Default behavior:" in prompt
+    assert "needs_approval" not in prompt
     assert EXTRA_INSTRUCTION_HEADER in prompt
     assert "Be concise." in prompt
     assert "Risk level" not in prompt

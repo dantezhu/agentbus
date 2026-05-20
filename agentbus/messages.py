@@ -23,8 +23,11 @@ Full task JSON:
 
 AGENT_PROMPT_DEFAULT_INSTRUCTIONS = """\
 Handle the task and return a clear result.
-By default, if the task involves irreversible side effects, deleting or overwriting files, commits/merges, external messages, production changes, money, or unclear credentials/permissions, do not execute it directly; return status=needs_approval and explain the exact operation needing user confirmation.
-Do not include secrets, tokens, cookies, or Authorization headers in the result.
+
+Default behavior:
+- Do not perform irreversible, external, production, financial, or unclear-permission actions without confirmation.
+- If confirmation is needed, explain what needs confirmation and why.
+- Do not include secrets, tokens, cookies, or Authorization headers in the result.
 """
 
 EXTRA_INSTRUCTION_HEADER = "Extra instruction:"
