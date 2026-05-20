@@ -99,14 +99,7 @@ agentbus task publish \
   'hello'
 ```
 
-| Argument | Required | Meaning |
-| --- | --- | --- |
-| `--server-url` | yes | Shared server URL, usually `"$AGENTBUS_SERVER_URL"`. |
-| `--to` | yes | Target agent id. Repeat it to publish the same content to multiple agents; AgentBus publishes one task message per target. |
-| `content` | yes | Final positional argument. Stored as a plain string at `payload.content`; pass JSON-like data as text and let the receiving agent interpret it. |
-| `--from` | no, defaults to `main` | Sender agent id. |
-| `--reply-to` | no, defaults to `--from` | Agent id whose result inbox receives the worker execution record. AgentBus derives `agentbus.<reply_to>.results`. |
-| `--task-type` | no, defaults to `default` | Optional work classification. |
+See [CLI reference](#cli-reference) for argument details.
 
 JSON-like text example:
 
@@ -126,7 +119,7 @@ agentbus result get \
   --agent main
 ```
 
-`--limit` means read the latest N stored results first. The meaning is the same with and without `--watch`.
+`--limit` means read the latest N stored results first. The meaning is the same with and without `--watch`. See [CLI reference](#cli-reference) for argument details.
 
 Results are worker-generated execution records, not the primary agent-to-agent reply channel. Business replies should be sent as new tasks. Each result embeds the original task whole under `task` for traceability. Top-level duplicate fields such as `request_id`, `from`, `to`, `worker`, and `reply_to` are intentionally omitted.
 
@@ -138,9 +131,31 @@ agentbus result get \
   --watch
 ```
 
+## CLI reference
+
+### `agentbus task publish`
+
+| Argument | Required | Meaning |
+| --- | --- | --- |
+| `--server-url` | yes | Shared server URL, usually `"$AGENTBUS_SERVER_URL"`. |
+| `--to` | yes | Target agent id. Repeat it to publish the same content to multiple agents; AgentBus publishes one task message per target. |
+| `content` | yes | Final positional argument. Stored as a plain string at `payload.content`; pass JSON-like data as text and let the receiving agent interpret it. |
+| `--from` | no, defaults to `main` | Sender agent id. |
+| `--reply-to` | no, defaults to `--from` | Agent id whose result inbox receives the worker execution record. AgentBus derives `agentbus.<reply_to>.results`. |
+| `--task-type` | no, defaults to `default` | Optional work classification. |
+
+### `agentbus result get`
+
+| Argument | Required | Meaning |
+| --- | --- | --- |
+| `--server-url` | yes | Shared server URL, usually `"$AGENTBUS_SERVER_URL"`. |
+| `--agent` | yes | Agent id whose result inbox should be read. AgentBus derives `agentbus.<agent>.results`. |
+| `--limit` | no, defaults to `1` | Number of latest stored results to read first. |
+| `--watch` | no | Keep watching for new results after reading recent history. |
+
 ## Safety rule
 
-When a task may cause irreversible side effects, external sends, production changes, credential exposure, or cost, the worker prompt instructs the called agent to return `needs_approval` instead of executing directly.
+When a task may cause irreversible side effects, external sends, production changes, credential exposure, or cost, the worker prompt instructs the called agent to explain what needs confirmation instead of executing directly.
 
 ## Troubleshooting
 

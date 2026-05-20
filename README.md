@@ -369,7 +369,7 @@ agentbus result get \
   --agent main
 ```
 
-To keep watching after reading recent history, add `--watch`. `--limit` has the same meaning whether or not `--watch` is set: read the latest N stored results first.
+To keep watching after reading recent history, add `--watch`. `--limit` has the same meaning whether or not `--watch` is set: read the latest N stored results first. See [CLI reference](#cli-reference) for argument details.
 
 ```bash
 agentbus result get \
@@ -391,16 +391,7 @@ agentbus task publish \
   'hello'
 ```
 
-Publishing uses CLI arguments instead of a TOML file because it is a short one-shot command.
-
-| Argument | Required | Meaning |
-| --- | --- | --- |
-| `--server-url` | yes | NATS server URL. |
-| `--to` | yes | Target agent id. Repeat it to publish the same content to multiple agents; AgentBus publishes one task message per target. |
-| `content` | yes | Final positional argument. Stored as a plain string at `payload.content`; pass JSON-like data as text and let the receiving agent interpret it. |
-| `--from` | no, defaults to `main` | Sender agent id. |
-| `--reply-to` | no, defaults to `--from` | Agent id whose result inbox receives the worker execution record. AgentBus derives `agentbus.<reply_to>.results`. |
-| `--task-type` | no, defaults to `default` | Optional work classification. |
+Publishing uses CLI arguments instead of a TOML file because it is a short one-shot command. See [CLI reference](#cli-reference) for argument details.
 
 Examples:
 
@@ -430,7 +421,31 @@ If the target workers are running, `agentbus result get --agent main` should rec
 agentbus.main.results
 ```
 
-## Message subjects
+## CLI reference
+
+### `agentbus task publish`
+
+| Argument | Required | Meaning |
+| --- | --- | --- |
+| `--server-url` | yes | NATS server URL. |
+| `--to` | yes | Target agent id. Repeat it to publish the same content to multiple agents; AgentBus publishes one task message per target. |
+| `content` | yes | Final positional argument. Stored as a plain string at `payload.content`; pass JSON-like data as text and let the receiving agent interpret it. |
+| `--from` | no, defaults to `main` | Sender agent id. |
+| `--reply-to` | no, defaults to `--from` | Agent id whose result inbox receives the worker execution record. AgentBus derives `agentbus.<reply_to>.results`. |
+| `--task-type` | no, defaults to `default` | Optional work classification. |
+
+### `agentbus result get`
+
+| Argument | Required | Meaning |
+| --- | --- | --- |
+| `--server-url` | yes | NATS server URL. |
+| `--agent` | yes | Agent id whose result inbox should be read. AgentBus derives `agentbus.<agent>.results`. |
+| `--limit` | no, defaults to `1` | Number of latest stored results to read first. |
+| `--watch` | no | Keep watching for new results after reading recent history. |
+
+## Message reference
+
+### Subjects
 
 Recommended convention:
 
@@ -451,7 +466,7 @@ agentbus.reviewer.tasks
 agentbus.main.results
 ```
 
-## Task message
+### Task message
 
 ```json
 {
@@ -467,7 +482,7 @@ agentbus.main.results
 }
 ```
 
-## Result message
+### Result message
 
 ```json
 {
@@ -493,12 +508,11 @@ agentbus.main.results
 
 `result` messages are worker-generated execution records. Agent-to-agent business replies should still be sent as new `task` messages. The original task is embedded whole under `task`; top-level duplicate routing fields such as `request_id`, `from`, `to`, `worker`, and `reply_to` are intentionally omitted.
 
-Recommended status values:
+Currently emitted status values:
 
 ```text
 completed
 failed
-needs_approval
 ```
 
 ## Logs
