@@ -37,6 +37,12 @@ It is designed for this architecture:
 +-------------------------------------------------------------------------------+
 ```
 
+Routing summary:
+
+- The main agent publishes tasks for target agents and may read returned results.
+- JetStream stores and delivers tasks to matching agentbus workers.
+- Workers invoke configured agents and publish results.
+
 ## Design goals
 
 - No bot-to-bot chat dependency.

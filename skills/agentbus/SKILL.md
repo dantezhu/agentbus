@@ -22,14 +22,43 @@ Use this skill when an agent needs to:
 ## Core model
 
 ```text
-shared NATS JetStream server
-  ↓
-agentbus task publish sends task messages
-  ↓
-target worker consumes agentbus.<agent_id>.tasks
-  ↓
-worker publishes task.result records
+                              +-------------------+
+                              |       human       |
+                              +---------+---------+
+                                        |
+                                        v
+                              +-------------------+
+                              |    main agent     |
+                              +----+---------+----+
+                                   |         ^
+                    publish tasks  |         |  read results
+                                   v         |
++----------------------------------+---------+----------------------------------+
+|                         public NATS JetStream bus                             |
+|                                                                               |
+|        +---------------------+                 +----------------------+       |
+|        |    tasks stream     |                 |    results stream    |       |
+|        +----------+----------+                 +----------+-----------+       |
+|                   |                                       ^                   |
++-------------------|---------------------------------------|-------------------+
+                    |                                       |
+      deliver tasks |                                       |  publish results
+                    v                                       |
++-------------------+---------------------------------------+-------------------+
+|                              agentbus workers                                 |
+|                                                                               |
+|        +------------------------+             +------------------------+      |
+|        |      coder worker      |             |    reviewer worker     |      |
+|        |  invokes coder agent   |             | invokes reviewer agent |      |
+|        +------------------------+             +------------------------+      |
++-------------------------------------------------------------------------------+
 ```
+
+Routing summary:
+
+- The main agent publishes tasks for target agents and may read returned results.
+- JetStream stores and delivers tasks to matching agentbus workers.
+- Workers invoke configured agents and publish results.
 
 ## Local setup
 
