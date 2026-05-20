@@ -100,11 +100,11 @@ def test_read_results_uses_same_limit_before_watch_and_non_watch():
     seen = []
 
     async def fake_connect(server_url):
-        assert server_url == "nats://main:secret@agentbus.example.com:7422"
+        assert server_url == "nats://main:secret@agentbus.example.com:7678"
         return nc
 
     asyncio.run(read_results(
-        server_url="nats://main:secret@agentbus.example.com:7422",
+        server_url="nats://main:secret@agentbus.example.com:7678",
         agent="main",
         limit=2,
         watch=True,
@@ -126,7 +126,7 @@ def test_read_results_drains_connection_when_watch_is_cancelled():
 
     with pytest.raises(asyncio.CancelledError):
         asyncio.run(read_results(
-            server_url="nats://main:secret@agentbus.example.com:7422",
+            server_url="nats://main:secret@agentbus.example.com:7678",
             agent="main",
             limit=1,
             watch=True,

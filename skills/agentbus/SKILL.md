@@ -42,7 +42,7 @@ pip install agentbus
 Expose the shared server URL in the active agent environment:
 
 ```bash
-AGENTBUS_SERVER_URL='nats://username:password@agentbus.example.com:7422'
+AGENTBUS_SERVER_URL='nats://username:password@agentbus.example.com:7678'
 ```
 
 For Hermes, put the same `AGENTBUS_SERVER_URL=...` line in `~/.hermes/.env`.

@@ -29,7 +29,7 @@ Server side:
 
 - `nats-server` with JetStream enabled.
 - `nats` CLI for stream setup and debugging.
-- A reachable TCP port for NATS clients. The examples use non-default `7422` instead of NATS default `4222`.
+- A reachable TCP port for NATS clients. The examples use non-default `7678` instead of NATS default `4222`.
 
 Worker side:
 
@@ -115,7 +115,7 @@ At minimum, change these values:
 main password
 coder password
 reviewer password
-client port, if `7422` is not appropriate
+client port, if `7678` is not appropriate
 TLS cert/key paths, if public internet clients will connect
 jetstream.store_dir, if /data/nats is not appropriate
 ```
@@ -195,20 +195,20 @@ tls {
 The examples in this README use the normal non-TLS URL form:
 
 ```text
-nats://main:main_password@agentbus.example.com:7422
+nats://main:main_password@agentbus.example.com:7678
 ```
 
 If the TLS block is enabled, switch client URLs to `tls://`, for example:
 
 ```text
-tls://main:main_password@agentbus.example.com:7422
+tls://main:main_password@agentbus.example.com:7678
 ```
 
 For public internet deployments, avoid exposing non-TLS `nats://` connections. Use TLS or put the NATS client port behind a VPN/private network.
 
 Important network notes:
 
-- Expose the NATS client port, `7422` in these examples, only to machines that need to connect. The NATS default is `4222`; using a non-default port reduces scanner noise but is not a security boundary.
+- Expose the NATS client port, `7678` in these examples, only to machines that need to connect. The NATS default is `4222`; using a non-default port reduces scanner noise but is not a security boundary.
 - Keep the monitoring port `8222` private or bind it only to localhost/VPN.
 
 ## 2. Create JetStream streams
@@ -218,7 +218,7 @@ After the NATS server is running, create the task and result streams.
 Use a user with JetStream API permission. In the sample config, `main` has `$JS.API.>` access:
 
 ```bash
-./scripts/stream-setup.sh 'nats://main:main_password@agentbus.example.com:7422'
+./scripts/stream-setup.sh 'nats://main:main_password@agentbus.example.com:7678'
 ```
 
 This creates:
@@ -231,9 +231,9 @@ AGENTBUS_RESULTS   subjects: agentbus.*.results  max age: 30d
 You can inspect the streams with:
 
 ```bash
-nats --server 'nats://main:main_password@agentbus.example.com:7422' stream ls
-nats --server 'nats://main:main_password@agentbus.example.com:7422' stream info AGENTBUS_TASKS
-nats --server 'nats://main:main_password@agentbus.example.com:7422' stream info AGENTBUS_RESULTS
+nats --server 'nats://main:main_password@agentbus.example.com:7678' stream ls
+nats --server 'nats://main:main_password@agentbus.example.com:7678' stream info AGENTBUS_TASKS
+nats --server 'nats://main:main_password@agentbus.example.com:7678' stream info AGENTBUS_RESULTS
 ```
 
 ## 3. Install the worker
@@ -294,7 +294,7 @@ chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
 
 [worker]
 # Use tls:// instead if the server TLS block is enabled.
-server_url = "nats://coder:coder_password@agentbus.example.com:7422"
+server_url = "nats://coder:coder_password@agentbus.example.com:7678"
 ```
 
 A fuller example:
@@ -307,7 +307,7 @@ extra_instruction = ""
 
 [worker]
 # Use tls:// instead if the server TLS block is enabled.
-server_url = "nats://coder:coder_password@agentbus.example.com:7422"
+server_url = "nats://coder:coder_password@agentbus.example.com:7678"
 task_timeout_seconds = 1800
 max_task_bytes = 1048576
 reconnect_time_wait_seconds = 2
@@ -359,7 +359,7 @@ Read the latest result in one terminal:
 
 ```bash
 agentbus result get \
-  --server-url 'nats://main:main_password@agentbus.example.com:7422' \
+  --server-url 'nats://main:main_password@agentbus.example.com:7678' \
   --agent main
 ```
 
@@ -367,7 +367,7 @@ To keep watching after reading recent history, add `--watch`. `--limit` has the 
 
 ```bash
 agentbus result get \
-  --server-url 'nats://main:main_password@agentbus.example.com:7422' \
+  --server-url 'nats://main:main_password@agentbus.example.com:7678' \
   --agent main \
   --limit 20 \
   --watch
@@ -377,7 +377,7 @@ Publish a task in another terminal:
 
 ```bash
 agentbus task publish \
-  --server-url 'nats://main:main_password@agentbus.example.com:7422' \
+  --server-url 'nats://main:main_password@agentbus.example.com:7678' \
   --to coder \
   --to reviewer \
   --from main \
@@ -400,12 +400,12 @@ Examples:
 
 ```bash
 agentbus task publish \
-  --server-url 'nats://main:main_password@agentbus.example.com:7422' \
+  --server-url 'nats://main:main_password@agentbus.example.com:7678' \
   --to coder \
   'hello'
 
 agentbus task publish \
-  --server-url 'nats://main:main_password@agentbus.example.com:7422' \
+  --server-url 'nats://main:main_password@agentbus.example.com:7678' \
   --to coder \
   --task-type batch \
   '[{"url":"https://example.com"}]'
