@@ -1,4 +1,5 @@
 import logging
+import re
 from logging.handlers import RotatingFileHandler
 
 import pytest
@@ -202,7 +203,11 @@ def test_configure_logging_creates_default_log_file_in_log_dir(tmp_path):
         handler.flush()
 
     assert worker_log_file.exists()
-    assert "hello agentbus log" in worker_log_file.read_text()
+    log_text = worker_log_file.read_text()
+    assert re.search(
+        r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} INFO \[agentbus\.test\] hello agentbus log$",
+        log_text,
+    )
     file_handlers = [handler for handler in logging.getLogger().handlers if isinstance(handler, RotatingFileHandler)]
     assert file_handlers[0].maxBytes == 100
     assert file_handlers[0].backupCount == 2
