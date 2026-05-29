@@ -206,6 +206,21 @@ def test_configure_logging_creates_default_log_file_in_log_dir(tmp_path):
     file_handlers = [handler for handler in logging.getLogger().handlers if isinstance(handler, RotatingFileHandler)]
     assert file_handlers[0].maxBytes == 100
     assert file_handlers[0].backupCount == 2
+    assert logging.getLogger().level == logging.INFO
+
+
+def test_configure_logging_uses_configured_log_level(tmp_path):
+    log_dir = tmp_path / ".agentbus" / "logs"
+    worker_log_file = log_dir / "agentbus-worker.log"
+
+    configure_logging(log_dir=str(log_dir), log_level="debug", force=True)
+    logging.getLogger("agentbus.test").debug("debug agentbus log")
+
+    for handler in logging.getLogger().handlers:
+        handler.flush()
+
+    assert logging.getLogger().level == logging.DEBUG
+    assert "debug agentbus log" in worker_log_file.read_text()
 
 
 def test_run_interruptibly_exits_130_without_traceback(capsys):

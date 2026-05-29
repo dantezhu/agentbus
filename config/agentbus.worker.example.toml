@@ -26,5 +26,6 @@ max_reconnect_attempts = -1
 
 [log]
 dir = "~/.agentbus/logs"
+level = "INFO"
 max_bytes = 104857600
 backup_count = 5

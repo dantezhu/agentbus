@@ -321,6 +321,7 @@ max_reconnect_attempts = -1
 
 [log]
 dir = "~/.agentbus/logs"
+level = "INFO"
 max_bytes = 104857600
 backup_count = 5
 
@@ -523,14 +524,15 @@ The worker writes logs both to stderr and to a rotating file. The default log fi
 ~/.agentbus/logs/agentbus-worker.log
 ```
 
-Default rotation settings:
+Default log settings:
 
 ```text
+level: INFO
 max file size: 100MB
 backup count: 5
 ```
 
-The log directory is created automatically. Configure it with `[log].dir`, `[log].max_bytes`, and `[log].backup_count` in TOML.
+The log directory is created automatically. Configure it with `[log].dir`, `[log].level`, `[log].max_bytes`, and `[log].backup_count` in TOML. Supported log levels are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.
 
 ## Ack behavior
 

@@ -15,6 +15,7 @@ class WorkerConfig:
     task_timeout_seconds: int = 1800
     extra_instruction: str = ""
     log_dir: str = "~/.agentbus/logs"
+    log_level: str = "INFO"
     log_max_bytes: int = 100 * 1024 * 1024
     log_backup_count: int = 5
     max_task_bytes: int = 1024 * 1024
@@ -54,10 +55,13 @@ SECTION_FIELD_MAP = {
     },
     "log": {
         "dir": "log_dir",
+        "level": "log_level",
         "max_bytes": "log_max_bytes",
         "backup_count": "log_backup_count",
     },
 }
+
+LOG_LEVELS = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
 
 
 def normalize_agent_chat_cmd(value: Any) -> list[str]:
@@ -66,6 +70,16 @@ def normalize_agent_chat_cmd(value: Any) -> list[str]:
     if not any("{input}" in item for item in value):
         raise ValueError("agent_chat_cmd must include the literal {input} placeholder")
     return value
+
+
+def normalize_log_level(value: Any) -> str:
+    if not isinstance(value, str):
+        raise ValueError("log_level must be a string")
+    level = value.upper()
+    if level not in LOG_LEVELS:
+        allowed = ", ".join(sorted(LOG_LEVELS))
+        raise ValueError(f"log_level must be one of: {allowed}")
+    return level
 
 
 def load_config_file(path: str | os.PathLike[str]) -> WorkerConfig:
@@ -113,6 +127,7 @@ def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
         "task_timeout_seconds": 1800,
         "extra_instruction": "",
         "log_dir": str(DEFAULT_LOG_DIR),
+        "log_level": "INFO",
         "log_max_bytes": 100 * 1024 * 1024,
         "log_backup_count": 5,
         "max_task_bytes": 1024 * 1024,
@@ -126,6 +141,7 @@ def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
         "task_timeout_seconds",
         "extra_instruction",
         "log_dir",
+        "log_level",
         "log_max_bytes",
         "log_backup_count",
         "max_task_bytes",
@@ -149,6 +165,7 @@ def config_from_mapping(data: dict[str, Any]) -> WorkerConfig:
         task_timeout_seconds=int(merged["task_timeout_seconds"]),
         extra_instruction=str(merged["extra_instruction"]),
         log_dir=str(merged["log_dir"]),
+        log_level=normalize_log_level(merged["log_level"]),
         log_max_bytes=int(merged["log_max_bytes"]),
         log_backup_count=int(merged["log_backup_count"]),
         max_task_bytes=int(merged["max_task_bytes"]),

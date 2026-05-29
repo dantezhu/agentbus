@@ -10,7 +10,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import TypeVar
 
-from .config import build_config
+from .config import build_config, normalize_log_level
 from .publish import DEFAULT_TASK_TYPE, publish_tasks
 from .result import read_results
 from .worker import AgentBusWorker
@@ -69,6 +69,7 @@ def build_parser() -> argparse.ArgumentParser:
 def configure_logging(
     log_dir: str,
     *,
+    log_level: str = "INFO",
     log_max_bytes: int = 100 * 1024 * 1024,
     log_backup_count: int = 5,
     force: bool = False,
@@ -76,7 +77,7 @@ def configure_logging(
     path = Path(log_dir).expanduser()
     path.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
-        level=logging.INFO,
+        level=normalize_log_level(log_level),
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
         handlers=[
             logging.StreamHandler(),
@@ -108,6 +109,7 @@ def run_worker(args: argparse.Namespace) -> None:
     config = build_config(args.config)
     configure_logging(
         config.log_dir,
+        log_level=config.log_level,
         log_max_bytes=config.log_max_bytes,
         log_backup_count=config.log_backup_count,
     )

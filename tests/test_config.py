@@ -28,6 +28,7 @@ max_reconnect_attempts = -1
 
 [log]
 dir = "~/custom-agentbus-logs"
+level = "debug"
 max_bytes = 100000000
 backup_count = 7
 
@@ -43,6 +44,7 @@ backup_count = 7
         task_timeout_seconds=900,
         extra_instruction="Keep results concise.",
         log_dir="~/custom-agentbus-logs",
+        log_level="DEBUG",
         log_max_bytes=100000000,
         log_backup_count=7,
         max_task_bytes=2048,
@@ -180,6 +182,26 @@ server_url = "nats://example:4222"
         load_config_file(config_path)
 
 
+def test_log_level_must_be_known_level_name(tmp_path):
+    config_path = tmp_path / "bad-log-level.toml"
+    config_path.write_text(
+        """
+[agent]
+id = "coder"
+chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
+
+[worker]
+server_url = "nats://example:4222"
+
+[log]
+level = "trace"
+""".strip()
+    )
+
+    with pytest.raises(ValueError, match="log_level must be one of"):
+        load_config_file(config_path)
+
+
 def test_config_from_sources_requires_config_file_when_default_is_absent(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("agentbus.config.DEFAULT_CONFIG_PATHS", (tmp_path / "missing.toml",))
@@ -195,5 +217,6 @@ def test_example_worker_config_uses_grouped_sections_and_loads():
     assert config.server_url == "nats://username:password@agentbus.example.com:7678"
     assert config.agent_chat_cmd == ["agent-cli", "chat", "--oneshot", "{input}"]
     assert config.log_dir == "~/.agentbus/logs"
+    assert config.log_level == "INFO"
     assert config.log_max_bytes == 104857600
     assert config.log_backup_count == 5
