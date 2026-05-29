@@ -48,7 +48,7 @@ def test_handle_message_success_publishes_result_and_acks(caplog):
         "to": "coder",
         "type": "task.request",
         "task_type": "ping",
-        "payload": {"x": 1},
+        "payload": {"content": "hello task", "x": 1},
         "reply_to": "main",
     }
     msg = DummyMsg(payload)
@@ -73,7 +73,7 @@ def test_handle_message_success_publishes_result_and_acks(caplog):
     assert result["result"] == "pong"
     assert result["task"]["id"] == "task-1"
     assert result["task"]["task_type"] == "ping"
-    assert result["task"]["payload"] == {"x": 1}
+    assert result["task"]["payload"] == {"content": "hello task", "x": 1}
     assert "request_id" not in result
     assert "from" not in result
     assert "to" not in result
@@ -81,6 +81,10 @@ def test_handle_message_success_publishes_result_and_acks(caplog):
     assert "reply_to" not in result
     logs = "\n".join(record.getMessage() for record in caplog.records)
     assert "event=task_received task_id=task-1" in logs
+    assert "event=task_content task_id=task-1 content='hello task'" in logs
+    assert "event=agent_prompt task_id=task-1 prompt=" in logs
+    assert "Full task JSON" in logs
+    assert "hello task" in logs
     assert "event=task_processing_started task_id=task-1" in logs
     assert "event=task_processing_finished task_id=task-1 status=completed returncode=0" in logs
     assert "event=result_published task_id=task-1" in logs

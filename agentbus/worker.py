@@ -112,7 +112,13 @@ class AgentBusWorker:
             reply_to,
             raw_size,
         )
+        logger.info(
+            "worker event=task_content task_id=%s content=%r",
+            task.id,
+            task.payload.get("content", task.payload),
+        )
         prompt = build_agent_prompt(task, self.config.agent_id, self.config.extra_instruction)
+        logger.info("worker event=agent_prompt task_id=%s prompt=%r", task.id, prompt)
         logger.info(
             "worker event=task_processing_started task_id=%s agent=%s timeout_seconds=%s",
             task.id,
