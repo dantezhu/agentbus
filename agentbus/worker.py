@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import asyncio
 import logging
+import time
 from typing import Awaitable, Callable, Protocol
 
 from .config import WorkerConfig
@@ -86,20 +87,39 @@ class AgentBusWorker:
         await self.publisher.publish(subject, dump_json(result))
 
     async def handle_message(self, msg) -> None:
+        raw_size = len(msg.data)
         try:
-            if len(msg.data) > self.config.max_task_bytes:
-                raise ValueError(f"message exceeds max task bytes: {len(msg.data)}")
+            if raw_size > self.config.max_task_bytes:
+                raise ValueError(f"message exceeds max task bytes: {raw_size}")
             task = load_task(msg.data)
         except Exception:
-            logger.exception("Invalid task payload; terminating message")
+            logger.exception("worker event=task_invalid bytes=%s", raw_size)
             if hasattr(msg, "term"):
                 await msg.term()
+                logger.warning("worker event=task_terminated bytes=%s", raw_size)
             else:
                 await msg.ack()
+                logger.warning("worker event=task_acked_invalid bytes=%s", raw_size)
             return
 
         reply_to = build_result_subject(task.reply_to or task.from_agent)
+        logger.info(
+            "worker event=task_received task_id=%s from=%s to=%s task_type=%s reply_subject=%s bytes=%s",
+            task.id,
+            task.from_agent,
+            task.to,
+            task.task_type,
+            reply_to,
+            raw_size,
+        )
         prompt = build_agent_prompt(task, self.config.agent_id, self.config.extra_instruction)
+        logger.info(
+            "worker event=task_processing_started task_id=%s agent=%s timeout_seconds=%s",
+            task.id,
+            self.config.agent_id,
+            self.config.task_timeout_seconds,
+        )
+        started_at = time.monotonic()
         try:
             process = await self.runner(prompt, self.config)
             if process.returncode == 0:
@@ -107,12 +127,37 @@ class AgentBusWorker:
             else:
                 err = process.stderr.strip() or process.stdout.strip() or f"Agent command exited with {process.returncode}"
                 result = build_result_message(task, self.config.agent_id, "failed", error=err)
+            logger.info(
+                "worker event=task_processing_finished task_id=%s status=%s returncode=%s duration_ms=%s stdout_bytes=%s stderr_bytes=%s",
+                task.id,
+                result["status"],
+                process.returncode,
+                int((time.monotonic() - started_at) * 1000),
+                len(process.stdout.encode("utf-8")),
+                len(process.stderr.encode("utf-8")),
+            )
+            logger.info(
+                "worker event=result_publishing task_id=%s result_id=%s status=%s subject=%s",
+                task.id,
+                result["id"],
+                result["status"],
+                reply_to,
+            )
             await self.publish_result(reply_to, result)
+            logger.info(
+                "worker event=result_published task_id=%s result_id=%s status=%s subject=%s",
+                task.id,
+                result["id"],
+                result["status"],
+                reply_to,
+            )
             await msg.ack()
+            logger.info("worker event=task_acked task_id=%s", task.id)
         except Exception:
-            logger.exception("Worker crashed before result publish; requesting redelivery")
+            logger.exception("worker event=task_handle_failed task_id=%s action=redelivery", task.id)
             if hasattr(msg, "nak"):
                 await msg.nak()
+                logger.warning("worker event=task_nacked task_id=%s", task.id)
             raise
 
     async def run_forever(self) -> None:

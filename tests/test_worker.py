@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 
 import pytest
 
@@ -40,7 +41,7 @@ def make_config():
     )
 
 
-def test_handle_message_success_publishes_result_and_acks():
+def test_handle_message_success_publishes_result_and_acks(caplog):
     payload = {
         "id": "task-1",
         "from": "main",
@@ -62,7 +63,8 @@ def test_handle_message_success_publishes_result_and_acks():
         worker = AgentBusWorker(make_config(), runner=runner, publisher=publisher)
         await worker.handle_message(msg)
 
-    asyncio.run(scenario())
+    with caplog.at_level(logging.INFO, logger="agentbus.worker"):
+        asyncio.run(scenario())
 
     assert msg.acked is True
     assert publisher.published[0][0] == "agentbus.main.results"
@@ -77,6 +79,13 @@ def test_handle_message_success_publishes_result_and_acks():
     assert "to" not in result
     assert "worker" not in result
     assert "reply_to" not in result
+    logs = "\n".join(record.getMessage() for record in caplog.records)
+    assert "event=task_received task_id=task-1" in logs
+    assert "event=task_processing_started task_id=task-1" in logs
+    assert "event=task_processing_finished task_id=task-1 status=completed returncode=0" in logs
+    assert "event=result_published task_id=task-1" in logs
+    assert "event=task_acked task_id=task-1" in logs
+    assert "pong" not in logs
 
 
 def test_handle_message_failed_agent_run_publishes_failed_result_and_acks():
@@ -107,7 +116,7 @@ def test_handle_message_failed_agent_run_publishes_failed_result_and_acks():
     assert result["error"] == "boom"
 
 
-def test_invalid_payload_is_terminated_without_publish():
+def test_invalid_payload_is_terminated_without_publish(caplog):
     msg = DummyMsg({"id": "bad"})
     publisher = DummyPublisher()
 
@@ -115,10 +124,14 @@ def test_invalid_payload_is_terminated_without_publish():
         worker = AgentBusWorker(make_config(), publisher=publisher)
         await worker.handle_message(msg)
 
-    asyncio.run(scenario())
+    with caplog.at_level(logging.INFO, logger="agentbus.worker"):
+        asyncio.run(scenario())
 
     assert msg.termed is True
     assert publisher.published == []
+    logs = "\n".join(record.getMessage() for record in caplog.records)
+    assert "event=task_invalid" in logs
+    assert "event=task_terminated" in logs
 
 
 def test_run_agent_chat_uses_configured_command(monkeypatch):
