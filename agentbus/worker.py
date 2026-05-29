@@ -117,6 +117,9 @@ class AgentBusWorker:
             task.id,
             task.payload.get("content", task.payload),
         )
+        await msg.ack()
+        logger.info("worker event=task_acked task_id=%s", task.id)
+
         prompt = build_agent_prompt(task, self.config.agent_id, self.config.extra_instruction)
         logger.info("worker event=agent_prompt task_id=%s prompt=%r", task.id, prompt)
         logger.info(
@@ -157,14 +160,8 @@ class AgentBusWorker:
                 result["status"],
                 reply_to,
             )
-            await msg.ack()
-            logger.info("worker event=task_acked task_id=%s", task.id)
         except Exception:
-            logger.exception("worker event=task_handle_failed task_id=%s action=redelivery", task.id)
-            if hasattr(msg, "nak"):
-                await msg.nak()
-                logger.warning("worker event=task_nacked task_id=%s", task.id)
-            raise
+            logger.exception("worker event=task_handle_failed task_id=%s", task.id)
 
     async def run_forever(self) -> None:
         if self._js is None:
