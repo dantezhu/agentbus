@@ -32,7 +32,7 @@ def test_readme_documents_nats_server_source_and_install_steps():
     assert "/data/jetstream" not in readme
     assert "sudo chmod 600 /etc/nats-server.conf" not in readme
     assert "sudo chown -R nats:nats /data" not in readme
-    assert "nats --server 'nats://main:main_password@agentbus.example.com:7678' stream ls" in readme
+    assert "nats --server 'nats://main:main_password@127.0.0.1:7678' stream ls" in readme
 
 
 def test_nats_worker_users_can_publish_results_and_ack_tasks():

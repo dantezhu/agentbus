@@ -221,10 +221,10 @@ Important network notes:
 
 After the NATS server is running, create the task and result streams.
 
-Use a user with JetStream API permission. In the sample config, `main` has `$JS.API.>` access:
+Use a user with JetStream API permission. In the sample config, `main` has `$JS.API.>` access. The example below assumes you run this on the NATS server host:
 
 ```bash
-./scripts/stream-setup.sh 'nats://main:main_password@agentbus.example.com:7678'
+./scripts/stream-setup.sh 'nats://main:main_password@127.0.0.1:7678'
 ```
 
 This creates:
@@ -237,9 +237,9 @@ AGENTBUS_RESULTS   subjects: agentbus.*.results  max age: 30d
 You can inspect the streams with:
 
 ```bash
-nats --server 'nats://main:main_password@agentbus.example.com:7678' stream ls
-nats --server 'nats://main:main_password@agentbus.example.com:7678' stream info AGENTBUS_TASKS
-nats --server 'nats://main:main_password@agentbus.example.com:7678' stream info AGENTBUS_RESULTS
+nats --server 'nats://main:main_password@127.0.0.1:7678' stream ls
+nats --server 'nats://main:main_password@127.0.0.1:7678' stream info AGENTBUS_TASKS
+nats --server 'nats://main:main_password@127.0.0.1:7678' stream info AGENTBUS_RESULTS
 ```
 
 ## 3. Install the worker
