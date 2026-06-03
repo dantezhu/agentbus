@@ -309,7 +309,9 @@ A fuller example:
 [agent]
 id = "coder"
 chat_cmd = ["agent-cli", "chat", "--oneshot", "{input}"]
-extra_instruction = ""
+extra_instruction = """
+Reply in Chinese.
+"""
 
 [worker]
 # Use tls:// instead if the server TLS block is enabled.
