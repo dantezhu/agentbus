@@ -11,7 +11,9 @@ id = "coder"
 # Required. Must be a TOML array of strings. String-form commands are rejected
 # so the generated multi-line prompt replaces one argv argument exactly.
 chat_cmd = ["hermes", "chat", "-Q", "-q", "{input}"]
-extra_instruction = ""
+extra_instruction = """
+Reply in Chinese.
+"""
 
 [worker]
 # Use tls:// instead if the server TLS block is enabled.
