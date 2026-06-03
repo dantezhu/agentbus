@@ -337,7 +337,7 @@ chat_cmd = ["agent-cli", "run", "--prompt", "{input}", "--json"]
 
 # Hermes example. Keep `-Q` before `-q`, or put it after `{input}`;
 # `-q` must be followed immediately by the query text.
-# If you want to keep session history, you can specify the same session_id via `-r`.
+# If you want to keep session history, you can specify the same session_id via `-r`, or session_name via `--continue`.
 chat_cmd = ["hermes", "chat", "-Q", "-q", "{input}"]
 ```
 
